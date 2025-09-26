@@ -1,0 +1,76 @@
+spring:
+  main:
+    web-application-type: none
+  kafka:
+    consumer:
+      loop-handler-limit: 90
+      loop-handler-interval: 1
+      listener-handler-limit: 60
+      listener-handler-interval: 1
+      auto-offset-reset: latest
+      pool-timeout: 1000
+    producer:
+      bootstrap-servers: br201-odin-tst.io.ing.net:9092,br401-odin-tst.io.ing.net:9092
+      properties:
+        enable:
+          idempotence: false
+        max:
+          in:
+            flight:
+              requests:
+               per:
+                 connection: 1
+      acks: all
+      retries: 10
+    ssl:
+      key-store-location: /cert/vespar_cert.pfx
+      key-store-password: aoEQmtiv1V/+XQkouMFMktHEsLNAAnyIDGcREpEgqQkc=
+      key-store-type: pkcs12
+      trust-store-location: /cert/vesparapp_ipc_st_truststore.jks
+      trust-store-password: hZQaQG0lgxHGZpvfpReYldzTUeMDISDzYqggZs+U=
+      key-password: aoEQmtiv1V/+XQkouMFMktHEsLNAAnyIDGcREpEgqQkc=
+    security:
+      protocol: SSL
+    properties:
+      schema-registry: https://sri-global-tst.ing.net:8443
+
+test:
+  feature:
+    path: src/test/resources/features
+  kafka:
+    bootstrap-servers: br201-odin-tst.io.ing.net:9093,br401-odin-tst.io.ing.net:9093
+    timeout-seconds: 90
+    registry-host: https://sri-global-tst.ing.net:8443/
+
+billingEngine:
+  topic: PS2071.transaction_profile-ro-billingengine-test.C5ORQ
+
+extent:
+  reporter:
+    spark:
+      enable:
+        logs: true
+        device: true
+      start: true
+      out: test-output/SparkReport/Spark.html
+      theme: dark
+      document-title: Automation Test Report
+      report-name: Test Execution Report
+      timestamp-format: MMM dd, yyyy HH:mm:ss
+      enable-timeline: true
+      charts: true
+      test-view-charts: true
+
+email:
+  send: false
+
+azure:
+  organization: MYAPP
+  project: MYAPPPROJ
+  pat: apat
+  testPlanId: 4065552
+  suiteId: 7781217
+  updateResults: false
+
+amlAssert:
+  check: false
