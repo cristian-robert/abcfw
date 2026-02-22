@@ -1,6 +1,7 @@
 package com.spring.befwlc.entry_filter;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.spring.befwlc.context.ScenarioContext;
 import com.spring.befwlc.exceptions.TestExecutionException;
 import com.spring.befwlc.payload.PayloadHelper;
 import com.spring.befwlc.utils.TransformationUtils;
@@ -8,7 +9,6 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Getter
@@ -21,8 +21,8 @@ public class EntryFilters {
     public EntryFilters(){
     }
 
-    public EntryFilters(final Map<String, String> dataTable){
-        initialFilters.addAll(mergeDatatableAndPayloadValues(dataTable));
+    public EntryFilters(final Map<String, String> dataTable, final ScenarioContext scenarioContext){
+        initialFilters.addAll(mergeDatatableAndPayloadValues(dataTable, scenarioContext));
     }
 
     public EntryFilters addFilter(final String key, final String value){
@@ -33,15 +33,15 @@ public class EntryFilters {
 
     public EntryFilter getFilterByKey(final String key){
         final List<EntryFilter> filters = initialFilters.stream().filter(entryFilter -> entryFilter.getKey().equals(key))
-                .collect(Collectors.toList());
+                .toList();
         if (filters.size() != 1){
             throw new TestExecutionException("No such filter found:%s", key);
         }
         return filters.get(0);
     }
-    private List<EntryFilter> mergeDatatableAndPayloadValues(final Map<String, String> dataTable){
-        return dataTable.entrySet().stream().map(entry -> new EntryFilter(entry.getKey(), PayloadHelper.generateValue(entry.getValue())))
-                .collect(Collectors.toList());
+    private List<EntryFilter> mergeDatatableAndPayloadValues(final Map<String, String> dataTable, final ScenarioContext scenarioContext){
+        return dataTable.entrySet().stream().map(entry -> new EntryFilter(entry.getKey(), PayloadHelper.generateValue(entry.getValue(), scenarioContext)))
+                .toList();
     }
 
     public void addPartiallyMatchedMessage(final List<EntryFilter> matchedFilters, final List<EntryFilter> unmatchedFilters,
@@ -72,7 +72,7 @@ public class EntryFilters {
         return partiallyMatchedEntries.stream()
                 .filter(partiallyMatchedEntry -> partiallyMatchedEntry.getMatchedFilters().stream()
                         .anyMatch(entryFilter -> matchedKeys.contains(entryFilter.getKey()) && !Objects.equals(entryFilter.getValue(), "null")))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     private String filtersToString(final List<EntryFilter> filters){

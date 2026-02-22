@@ -4,14 +4,15 @@ package com.spring.befwlc.utils;
 
 import com.spring.befwlc.exceptions.TestExecutionException;
 
+import java.time.DayOfWeek;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Calendar;
 
 public class DateUtils {
 
-    public static final String FULL_DATE_AND_OFFSET_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'";
+    public static final String FULL_DATE_AND_OFFSET_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSSSSSXXX";
     public static final String FULL_DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'";
     public static final String SHORT_DATE_FORMAT = "yyyy-MM-dd";
     public static final String ISO_DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'";
@@ -65,24 +66,16 @@ public class DateUtils {
                 .format(DateTimeFormatter.ofPattern(outputDateFormat));
     }
 
-    public static String generateValueDate(String product, String priority) {
-        Calendar calendar = Calendar.getInstance();
-        int spotDays = Integer.parseInt(TransactionDataUtils.getByProductProperty(product, priority, "Spot_days",
-                "path/config/src/test/resources/configs/oro/payment_engine_cutoff_times.json"));
-        calendar.add(Calendar.DATE, spotDays);
-        String valueDate;
+    public static String generateValueDate(String product, String priority, String configFilePath) {
+        int spotDays = Integer.parseInt(TransactionDataUtils.getByProductProperty(product, priority, "Spot_days", configFilePath));
+        LocalDate targetDate = LocalDate.now().plusDays(spotDays);
 
-        switch (calendar.get(Calendar.DAY_OF_WEEK)) {
-            case(Calendar.SATURDAY):
-                valueDate = OffsetDateTime.now().plusDays(spotDays + 2).format(DateTimeFormatter.ofPattern(SHORT_DATE_FORMAT));
-                break;
-            case(Calendar.SUNDAY):
-                valueDate = OffsetDateTime.now().plusDays(spotDays + 1).format(DateTimeFormatter.ofPattern(SHORT_DATE_FORMAT));
-                break;
-            default:
-                valueDate = LocalDateTime.now().plusDays(spotDays).format(DateTimeFormatter.ofPattern(SHORT_DATE_FORMAT));
+        if (targetDate.getDayOfWeek() == DayOfWeek.SATURDAY) {
+            targetDate = targetDate.plusDays(2);
+        } else if (targetDate.getDayOfWeek() == DayOfWeek.SUNDAY) {
+            targetDate = targetDate.plusDays(1);
         }
 
-        return valueDate;
+        return targetDate.format(DateTimeFormatter.ofPattern(SHORT_DATE_FORMAT));
     }
 }

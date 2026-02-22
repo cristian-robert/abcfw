@@ -6,5 +6,7 @@ public enum ScenarioContextKeys {
     KAFKA_FILTERS,
     BANK_LIST_RESPONSE,
     BANK_LIST_BIC,
-    LAST_MATCHED_RECORD
+    LAST_MATCHED_RECORD,
+    BENEFICIARY_ID,
+    TX_SEQ
 }

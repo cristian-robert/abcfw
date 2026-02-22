@@ -1,7 +1,6 @@
 package com.spring.befwlc.entry_filter;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.spring.befwlc.context.ApplicationContextProvider;
 import com.spring.befwlc.context.ScenarioContext;
 import com.spring.befwlc.context.ScenarioContextKeys;
 import com.spring.befwlc.entry_filter.json.JsonNodeHelper;
@@ -43,7 +42,7 @@ public class EntryFinder {
         }
     }
 
-    public static boolean entryFoundByFilters(final List<ObjectNode> entries, final EntryFilters entryFilters) {
+    public static boolean entryFoundByFilters(final List<ObjectNode> entries, final EntryFilters entryFilters, final ScenarioContext scenarioContext) {
         final List<ObjectNode> entriesFound = EntryFinder.findEntryByFilters(entries, entryFilters, true);
 
         if (entriesFound.isEmpty()) {
@@ -51,7 +50,7 @@ public class EntryFinder {
         } else if (entriesFound.size() > 1) {
             throw new TestExecutionException("Multiple entries found:\n" + TransformationUtils.objectToPrettyString(entriesFound));
         } else {
-            ApplicationContextProvider.getBean(ScenarioContext.class).put(ScenarioContextKeys.LAST_MATCHED_RECORD, entriesFound.get(0));
+            scenarioContext.put(ScenarioContextKeys.LAST_MATCHED_RECORD, entriesFound.get(0));
             EntryFinder.logEntriesFound(entriesFound);
             return true;
         }

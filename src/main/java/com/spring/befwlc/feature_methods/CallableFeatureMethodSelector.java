@@ -1,5 +1,6 @@
 package com.spring.befwlc.feature_methods;
 
+import com.spring.befwlc.context.ScenarioContext;
 import com.spring.befwlc.exceptions.TestExecutionException;
 import com.spring.befwlc.utils.TransformationUtils;
 
@@ -10,17 +11,17 @@ import java.util.TreeMap;
 
 public class CallableFeatureMethodSelector {
 
-    public static String executeStaticMethod(final String methodName) {
+    public static String executeStaticMethod(final String methodName, final ScenarioContext scenarioContext) {
         try {
-            return StaticFeatureMethod.valueOf(methodName).value();
+            return StaticFeatureMethod.valueOf(methodName).value(scenarioContext);
         } catch (IllegalArgumentException e) {
             throw new TestExecutionException(featureMethodsDescription(methodName));
         }
     }
 
-    public static String executeCallableMethod(final String methodName, final List<String> callableMethodArgs) {
+    public static String executeCallableMethod(final String methodName, final List<String> callableMethodArgs, final ScenarioContext scenarioContext) {
         try {
-            return CallableFeatureMethod.valueOf(methodName).execute(callableMethodArgs);
+            return CallableFeatureMethod.valueOf(methodName).execute(callableMethodArgs, scenarioContext);
         } catch (IllegalArgumentException e){
             throw new TestExecutionException(featureMethodsDescription(methodName));
         }

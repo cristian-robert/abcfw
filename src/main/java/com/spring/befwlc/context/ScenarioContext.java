@@ -27,7 +27,7 @@ public class ScenarioContext {
         if(type.isAssignableFrom(value.getClass())){
             return type.cast(value);
         }
-        throw new TestExecutionException("Object in ScenarioContext for key '%s' is not of expected type '$s'", key.name(), type.getSimpleName());
+        throw new TestExecutionException("Object in ScenarioContext for key '%s' is not of expected type '%s'", key.name(), type.getSimpleName());
     }
 
     public boolean containsValue(final Enum<?> key){

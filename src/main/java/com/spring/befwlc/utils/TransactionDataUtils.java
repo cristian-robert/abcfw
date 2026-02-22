@@ -13,6 +13,8 @@ import java.util.UUID;
 
 public class TransactionDataUtils {
 
+    private static final ObjectMapper objectMapper = new ObjectMapper();
+
     public static String defaultUUID() { return UUID.randomUUID().toString(); }
 
     public static String UUIDWithoutSeparator() { return UUID.randomUUID().toString().replaceAll("-", ""); }
@@ -53,9 +55,8 @@ public class TransactionDataUtils {
 
     private static JsonNode getConfig(String pathToConfigFile) {
         try {
-            ObjectMapper mapper = new ObjectMapper();
             Path path = Paths.get(pathToConfigFile);
-            return mapper.readTree(new String(Files.readAllBytes(path), StandardCharsets.UTF_8));
+            return objectMapper.readTree(new String(Files.readAllBytes(path), StandardCharsets.UTF_8));
         } catch (Exception e) {
             e.printStackTrace();
             throw new TestExecutionException("Could not load config file by specified path.");

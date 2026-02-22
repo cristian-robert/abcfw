@@ -10,9 +10,9 @@ import java.util.Map;
 @Getter
 public class PartiallyMatchedEntry {
 
-    public List<EntryFilter> matchedFilters;
-    public List<EntryFilter> unmatchedFilters;
-    final ObjectNode entry;
+    private final List<EntryFilter> matchedFilters;
+    private final List<EntryFilter> unmatchedFilters;
+    private final ObjectNode entry;
 
     public PartiallyMatchedEntry(final List<EntryFilter> matchedFilters, final List<EntryFilter> unmatchedFilters, final ObjectNode entry){
         this.matchedFilters = matchedFilters;
