@@ -1,0 +1,54 @@
+spring:
+  main:
+    web-application-type: none
+
+kafka:
+  bootstrap-servers: br201-odin-tst.io.ing.net:9093,br401-odin-tst.io.ing.net:9093
+  schema-registry-url: https://sri-global-tst.ing.net:8443
+  security-protocol: SSL
+  publish-topic: PS2071.transaction_profile-ro-billingengine-test.C5ORQ
+  consume-topic: test_consume_kafka_topic
+  ssl:
+    key-store-location: /cert/vespar_cert.pfx
+    key-store-password: changeme
+    key-store-type: pkcs12
+    trust-store-location: /cert/vesparapp_ipc_st_truststore.jks
+    trust-store-password: changeme
+    key-password: changeme
+  consumer:
+    auto-offset-reset: latest
+    poll-timeout-ms: 1000
+  producer:
+    acks: all
+    retries: 10
+    enable-idempotence: false
+    max-in-flight-requests-per-connection: 1
+
+await:
+  timeout-seconds: 90
+  poll-interval-seconds: 1
+  listener-timeout-seconds: 60
+
+azure:
+  organization: MYAPP
+  project: MYAPPPROJ
+  pat: apat
+  test-plan-id: "4065552"
+  suite-id: "7781217"
+  update-results: false
+
+extent:
+  reporter:
+    spark:
+      enable:
+        logs: true
+        device: true
+      start: true
+      out: test-output/SparkReport/Spark.html
+      theme: dark
+      document-title: Automation Test Report
+      report-name: Test Execution Report
+      timestamp-format: MMM dd, yyyy HH:mm:ss
+      enable-timeline: true
+      charts: true
+      test-view-charts: true
