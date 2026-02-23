@@ -5,17 +5,17 @@ Feature: Testing fee amount for Credit Transfers SEPA Realtime
   Scenario Outline: Testing standard fee amount for Credit Transfers SEPA Realtime
     Given I set testId for my current testcase
       | testcaseId | <testId> |
-    Given 'billing_engine/ct_standard_outgoing_sepa_realtime.json' payload with the following details is posted on 'BILLING_ENGINE' endpoint
+    Given 'ct_standard_outgoing_sepa_realtime.json' payload with the following details is posted on 'billing-engine-inbound' endpoint
       | body.externalTransactionCode | <TxType>            |
       | body.amount                  | <Amount>            |
       | body.urgencyType            | <UrgencyType>       |
       | body.effectiveAmount        | <EffectiveAmount>   |
       | body.initChannel            | <InitChannel>       |
       | body.transactionSource      | <TransactionSource> |
-    Then an event with the following fields is posted on 'BF' topic
-      | Message.GeneralInformation[3].value | <ProductId> |
-      | Message.GeneralInformation[5].value | <FeePlanId> |
-      | Message.GeneralInformation[3].value | <FeeAmount> |
+    Then an event with the following fields is posted on 'billing-engine-outbound' topic
+      | Message.GeneralInformation[0].value | <ProductId> |
+      | Message.GeneralInformation[1].value | <FeePlanId> |
+      | Message.GeneralInformation[2].value | <FeeAmount> |
 
     Examples:
       | TxType | Amount | ProductId | FeePlanId | FeeAmount | TransactionSource | UrgencyType | EffectiveAmount | InitChannel | description         | testId  |
