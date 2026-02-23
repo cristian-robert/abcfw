@@ -1,0 +1,68 @@
+# ============================================================
+# import-ca-bundle.ps1
+# Splits a ca-bundle file and imports all certs into a JKS truststore
+# ============================================================
+# CONFIGURE THESE:
+$caBundleFile   = "your-ca-bundle.ca-bundle"   # path to your ca-bundle file
+$truststoreFile = "truststore.jks"             # output truststore name
+$storePass      = "changeit"                   # truststore password
+$keytool        = "keytool"                    # or full path e.g. "C:\Program Files\Java\jdk-17\bin\keytool.exe"
+$tempDir        = ".\split-certs"              # temp folder for split certs
+# ============================================================
+
+# Create temp directory
+if (Test-Path $tempDir) { Remove-Item $tempDir -Recurse -Force }
+New-Item -ItemType Directory -Path $tempDir | Out-Null
+
+# Read the bundle
+$content = Get-Content $caBundleFile -Raw
+
+# Split into individual cert blocks
+$certBlocks = [regex]::Matches($content, '-----BEGIN CERTIFICATE-----[\s\S]+?-----END CERTIFICATE-----')
+
+Write-Host "Found $($certBlocks.Count) certificates in bundle."
+
+$index = 0
+$successCount = 0
+$failCount = 0
+
+foreach ($block in $certBlocks) {
+    $index++
+    $certFile = "$tempDir\cert-$index.cer"
+    
+    # Write individual cert to file
+    $block.Value | Set-Content -Path $certFile -Encoding ASCII
+    
+    $alias = "ca-bundle-$index"
+    
+    Write-Host "[$index/$($certBlocks.Count)] Importing alias: $alias ..." -NoNewline
+
+    # Run keytool import
+    $result = & $keytool -import -trustcacerts `
+        -alias $alias `
+        -file $certFile `
+        -keystore $truststoreFile `
+        -storepass $storePass `
+        -noprompt 2>&1
+
+    if ($LASTEXITCODE -eq 0) {
+        Write-Host " OK" -ForegroundColor Green
+        $successCount++
+    } else {
+        Write-Host " FAILED" -ForegroundColor Red
+        Write-Host "  Reason: $result" -ForegroundColor Yellow
+        $failCount++
+    }
+}
+
+# Cleanup temp files
+Remove-Item $tempDir -Recurse -Force
+
+Write-Host ""
+Write-Host "Done! Imported: $successCount  Failed: $failCount"
+Write-Host "Truststore: $truststoreFile"
+
+# Verify
+Write-Host ""
+Write-Host "Verifying truststore contents..."
+& $keytool -list -keystore $truststoreFile -storepass $storePass
