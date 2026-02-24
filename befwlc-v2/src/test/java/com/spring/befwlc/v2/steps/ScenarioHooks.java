@@ -9,8 +9,8 @@ import io.cucumber.java.Scenario;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.Collection;
 import java.util.List;
-import java.util.Set;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -28,7 +28,7 @@ public class ScenarioHooks {
 
     @Before(order = 1)
     public void startReporting(Scenario scenario) {
-        Set<String> tags = scenario.getSourceTagNames();
+        Collection<String> tags = scenario.getSourceTagNames();
         reporters.forEach(r -> r.startTest(scenario.getName(), tags));
     }
 

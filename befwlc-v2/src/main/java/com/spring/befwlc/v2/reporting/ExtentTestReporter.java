@@ -6,7 +6,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-import java.util.Set;
+import java.util.Collection;
 
 @Slf4j
 @Component
@@ -17,7 +17,7 @@ public class ExtentTestReporter implements TestReporter {
     private static final ThreadLocal<ExtentTest> currentTest = new ThreadLocal<>();
 
     @Override
-    public void startTest(String name, Set<String> tags) {
+    public void startTest(String name, Collection<String> tags) {
         ExtentTest test = extentReports.createTest(name, String.join(", ", tags));
         tags.forEach(tag -> test.assignCategory(tag.replace("@", "")));
         currentTest.set(test);

@@ -24,7 +24,7 @@ public class AzureDevOpsReporter implements TestReporter {
     private boolean currentScenarioFailed = false;
 
     @Override
-    public void startTest(String name, Set<String> tags) {
+    public void startTest(String name, Collection<String> tags) {
         currentScenarioFailed = false;
     }
 

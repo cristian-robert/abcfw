@@ -21,7 +21,7 @@ public class PayloadSteps {
     @Autowired(required = false)
     private AzureDevOpsReporter azureReporter;
 
-    @Given("I set testId for my current testCase")
+    @Given("I set testId for my current testcase")
     public void setTestId(DataTable dataTable) {
         Map<String, String> data = dataTable.asMap(String.class, String.class);
         String id = data.get("testCaseId");
