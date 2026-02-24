@@ -17,6 +17,7 @@ public class KafkaProperties {
     @NotBlank private String publishTopic;
     @NotBlank private String consumeTopic;
     private Ssl ssl = new Ssl();
+    private SchemaRegistrySsl schemaRegistrySsl = new SchemaRegistrySsl();
     private Consumer consumer = new Consumer();
     private Producer producer = new Producer();
 
@@ -28,6 +29,14 @@ public class KafkaProperties {
         private String trustStorePassword;
         private String keyPassword;
         private String keyStoreType = "pkcs12";
+    }
+
+    @Getter @Setter
+    public static class SchemaRegistrySsl {
+        private String caLocation;
+        private String keystoreLocation;
+        private String keystorePassword;
+        private boolean enableCertificateVerification = true;
     }
 
     @Getter @Setter
