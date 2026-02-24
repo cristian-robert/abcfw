@@ -3,6 +3,7 @@ package com.spring.befwlc.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.spring.befwlc.configuration.AwaitConfiguration;
+import com.spring.befwlc.context.ScenarioContext;
 import com.spring.befwlc.entry_filter.EntryFilters;
 import com.spring.befwlc.entry_filter.EntryFinder;
 import com.spring.befwlc.exceptions.TestExecutionException;
@@ -23,13 +24,18 @@ import static com.spring.befwlc.service.KafkaConstants.*;
 @Slf4j
 public abstract class KafkaConsumer {
 
-    protected final ObjectMapper mapper = new ObjectMapper();
+    @Autowired
+    protected ObjectMapper mapper;
     protected final List<ObjectNode> records = new CopyOnWriteArrayList<>();
+    private final AwaitHandler awaitHandler = new AwaitHandler();
     private final String[] messageUniqueKeys;
     private final String topicName;
 
     @Autowired(required = false)
     protected KafkaAvroDeserializer kafkaAvroDeserializer;
+
+    @Autowired
+    private ScenarioContext scenarioContext;
 
     @Autowired(required = false)
     @Qualifier("kafkaAwaitHandlerConfiguration")
@@ -50,7 +56,7 @@ public abstract class KafkaConsumer {
         log.info("Assert message is posted on Kafka '{}' topic. Filters: {}", topicName, entryFilters.toString());
 
         try{
-            AwaitHandler.awaitTrue(() -> EntryFinder.entryFoundByFilters(records, entryFilters), awaitConfiguration);
+            awaitHandler.awaitTrue(() -> EntryFinder.entryFoundByFilters(records, entryFilters, scenarioContext), awaitConfiguration);
         } catch (Exception e) {
             EntryFinder.logPartiallyMatchedEntries(records, entryFilters.getPartiallyMatchedEntriesWithMatchedKeys(messageUniqueKeys), true);
             throw new TestExecutionException("No Kafka entry found by given filters");
@@ -62,7 +68,7 @@ public abstract class KafkaConsumer {
         log.info("Assert message is not posted on Kafka '{}' topic. Filters: {}", topicName, entryFilters.toString());
 
         try {
-            AwaitHandler.awaitTrue(() -> EntryFinder.entryNotFoundByFilters(records, entryFilters), awaitConfiguration);
+            awaitHandler.awaitTrue(() -> EntryFinder.entryNotFoundByFilters(records, entryFilters), awaitConfiguration);
         } catch (Exception e){
             log.info("No Kafka entry fully matched the given filters");
         }
@@ -77,6 +83,7 @@ public abstract class KafkaConsumer {
         record.headers().forEach(header -> {
             final byte[] headerBites = header.value();
             final String headerValue = Objects.nonNull(headerBites) ? new String(headerBites, StandardCharsets.UTF_8) : null;
+            headers.put(header.key(), headerValue);
         });
         decodedMessage.set(HEADERS, headers);
     }
@@ -97,6 +104,8 @@ public abstract class KafkaConsumer {
             addRecord(decodedMessage);
         } catch (final Exception e){
             logError(e);
+            throw new TestExecutionException("Failed to deserialize Kafka record from topic '%s' at offset %d: %s",
+                    record.topic(), record.offset(), e.getMessage());
         }
     }
 

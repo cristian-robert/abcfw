@@ -1,0 +1,20 @@
+{
+  "type": "record",
+  "name": "BillingResponse",
+  "namespace": "test.billing.events",
+  "fields": [
+    {
+      "name": "GeneralInformation",
+      "type": {
+        "type": "array",
+        "items": {
+          "type": "record",
+          "name": "InfoEntry",
+          "fields": [
+            {"name": "value", "type": ["null", "string"], "default": null}
+          ]
+        }
+      }
+    }
+  ]
+}

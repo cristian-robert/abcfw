@@ -38,7 +38,7 @@ public class EncryptionUtils {
     }
 
     public static String decrypt(final String target){
-        return stringEncryptor().encrypt(target);
+        return stringEncryptor().decrypt(target);
     }
 
     private static String encrypt(final String target){

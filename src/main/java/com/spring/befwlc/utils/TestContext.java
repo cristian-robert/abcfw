@@ -6,6 +6,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+/**
+ * @deprecated Use {@link com.spring.befwlc.context.ScenarioContext} with {@link com.spring.befwlc.context.ScenarioContextKeys} instead.
+ */
+@Deprecated
 @Component
 public class TestContext {
 

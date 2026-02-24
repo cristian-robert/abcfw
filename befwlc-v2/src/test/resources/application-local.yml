@@ -1,0 +1,13 @@
+kafka:
+  bootstrap-servers: localhost:9092
+  schema-registry-url: http://localhost:8082
+  security-protocol: PLAINTEXT
+  publish-topic: billing-engine-inbound
+  consume-topic: billing-engine-outbound
+  ssl:
+    key-store-location:
+  consumer:
+    auto-offset-reset: earliest
+
+azure:
+  update-results: false

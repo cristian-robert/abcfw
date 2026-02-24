@@ -1,6 +1,5 @@
-package com.ing.billing_engine.configuration;
+package com.spring.befwlc.configuration;
 
-import com.spring.befwlc.configuration.AwaitConfiguration;
 import io.confluent.kafka.schemaregistry.client.CachedSchemaRegistryClient;
 import io.confluent.kafka.serializers.KafkaAvroDeserializer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
@@ -29,35 +28,17 @@ public class KafkaConsumerConfig {
     @Autowired
     private StringEncryptor jasyptStringEncryptor;
 
+    @Autowired
+    private KafkaSslProperties sslProperties;
+
     @Value("${test.kafka.bootstrap-servers}")
     private String bootstrapServers;
-
-    @Value("${spring.kafka.ssl.key-store-password}")
-    private String keyStorePassword;
-
-    @Value("${spring.kafka.ssl.trust-store-password}")
-    private String trustStorePassword;
-
-    @Value("${spring.kafka.ssl.key-password}")
-    private String keyPassword;
 
     @Value("${spring.kafka.security.protocol}")
     private String securityProtocol;
 
     @Value("${spring.kafka.consumer.auto-offset-reset}")
     private String autoOffsetReset;
-
-    @Value("${spring.kafka.ssl.key-store-location}")
-    private String keystoreLocation;
-
-    @Value("${spring.kafka.ssl.trust-store-location}")
-    private String kafkaTruststoreLocation;
-
-    @Value("${spring.kafka.ssl.key-store-type}}")
-    private String kafkaKeystoreType;
-
-    // @Value("${spring.kafka.consumer.heartbeat-interval}")
-    // private String heartbeatInterval;
 
     @Value("${spring.kafka.consumer.loop-handler-interval}")
     private long kafkaPoolTimeoutInMillis;
@@ -77,7 +58,7 @@ public class KafkaConsumerConfig {
     @Value("${test.kafka.registry-host}")
     private String kafkaRegistryHost;
 
-    @Bean("kafkaAwaitHandlerConfiguration") // A cristian robert iosef
+    @Bean("kafkaAwaitHandlerConfiguration")
     public AwaitConfiguration awaitKafkaHandlerConfiguration() {
         return new AwaitConfiguration(kafkaPoolTimeoutInMillis, kafkaMaxIterations);
     }
@@ -92,16 +73,16 @@ public class KafkaConsumerConfig {
         return new KafkaAvroDeserializer(new CachedSchemaRegistryClient(kafkaRegistryHost, 1000));
     }
 
-    @Bean 
+    @Bean
     public ConsumerFactory<byte[], byte[]> consumerFactory() {
-        Resource trustStore = resourceLoader.getResource("file:" + System.getProperty("user.dir") + kafkaTruststoreLocation);
-        String trustStorePass = jasyptStringEncryptor.decrypt(trustStorePassword);
-        Resource keyStore = resourceLoader.getResource("file:" + System.getProperty("user.dir") + keystoreLocation);
-        String keyStorePass = jasyptStringEncryptor.decrypt(keyStorePassword);
-        String keyPass = jasyptStringEncryptor.decrypt(keyPassword);
+        Resource trustStore = resourceLoader.getResource("file:" + System.getProperty("user.dir") + sslProperties.getTrustStoreLocation());
+        String trustStorePass = jasyptStringEncryptor.decrypt(sslProperties.getTrustStorePassword());
+        Resource keyStore = resourceLoader.getResource("file:" + System.getProperty("user.dir") + sslProperties.getKeyStoreLocation());
+        String keyStorePass = jasyptStringEncryptor.decrypt(sslProperties.getKeyStorePassword());
+        String keyPass = jasyptStringEncryptor.decrypt(sslProperties.getKeyPassword());
 
         Map<String, Object> props = new HashMap<>();
-        props.put("ssl.keystore.type", kafkaKeystoreType);
+        props.put("ssl.keystore.type", sslProperties.getKeyStoreType());
         try {
             props.put("ssl.keystore.location", keyStore.getFile().getAbsolutePath());
         } catch (IOException e) {
@@ -130,7 +111,7 @@ public class KafkaConsumerConfig {
     }
 
 
-    @Bean // A cristian robert iosef
+    @Bean
     public ConcurrentKafkaListenerContainerFactory<byte[], byte[]> kafkaListenerContainerFactory() {
         final ConcurrentKafkaListenerContainerFactory<byte[], byte[]> factory = new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(consumerFactory());

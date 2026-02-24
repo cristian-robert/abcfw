@@ -3,21 +3,19 @@ package com.spring.befwlc.handlers;
 import com.spring.befwlc.configuration.AwaitConfiguration;
 import com.spring.befwlc.exceptions.MaximumIterationExceededException;
 import com.spring.befwlc.exceptions.TestExecutionException;
-import org.springframework.stereotype.Component;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-@Component
 public class AwaitHandler {
 
-    private static final Lock lock = new ReentrantLock();
-    private static final Condition condition = lock.newCondition();
+    private final Lock lock = new ReentrantLock();
+    private final Condition condition = lock.newCondition();
 
     @SuppressWarnings("ResultOfMethodCallIgnored")
-    public static void awaitTrue(final ConditionMatcher conditionMatcher, final AwaitConfiguration awaitConfiguration) throws TestExecutionException{
+    public void awaitTrue(final ConditionMatcher conditionMatcher, final AwaitConfiguration awaitConfiguration) throws TestExecutionException {
         int iterations = 0;
         lock.lock();
         try {

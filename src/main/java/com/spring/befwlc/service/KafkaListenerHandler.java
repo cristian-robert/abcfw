@@ -16,6 +16,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class KafkaListenerHandler {
 
     private final AtomicBoolean isConnected = new AtomicBoolean(false);
+    private final AwaitHandler awaitHandler = new AwaitHandler();
 
     @Autowired
     private KafkaListenerEndpointRegistry endpointRegistry;
@@ -26,7 +27,7 @@ public class KafkaListenerHandler {
 
     public synchronized void waitForListenersToConnect() {
         if (!isConnected.get()) {
-            AwaitHandler.awaitTrue(() -> {
+            awaitHandler.awaitTrue(() -> {
                 updateListenersFlag();
                 return isConnected.get();
             }, awaitConfiguration);

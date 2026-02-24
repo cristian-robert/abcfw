@@ -1,11 +1,7 @@
 package com.spring.befwlc.configuration;
 
-import io.confluent.kafka.schemaregistry.client.CachedSchemaRegistryClient;
-import io.confluent.kafka.serializers.KafkaAvroDeserializer;
 import io.confluent.kafka.serializers.KafkaAvroSerializer;
-import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
-import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.jasypt.encryption.StringEncryptor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,7 +10,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
-import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
 import org.springframework.kafka.core.*;
 import test.prof.events.TransactionCreated;
 
@@ -31,49 +26,31 @@ public class KafkaProducerConfig {
     @Autowired
     private StringEncryptor jasyptStringEncryptor;
 
+    @Autowired
+    private KafkaSslProperties sslProperties;
+
     @Value("${test.kafka.registry-host}")
     private String schemaRegistry;
 
     @Value("${billingEngine.topic}")
     private String billingEngineTopic;
 
-    @Value("${spring.kafka.ssl.trust-store-password}")
-    private String trustStorePassword;
-
-    @Value("${spring.kafka.ssl.key-password}")
-    private String keyPassword;
-
     @Value("${spring.kafka.security.protocol}")
     private String securityProtocol;
 
-    @Value("${spring.kafka.ssl.key-store-password}")
-    private String keyStorePassword;
-
-    @Value("${spring.kafka.ssl.key-store-location}")
-    private String keystoreLocation;
-
-    @Value("${spring.kafka.ssl.trust-store-location}")
-    private String kafkaTruststoreLocation;
-
-    @Value("${spring.kafka.ssl.key-store-type}}")
-    private String kafkaKeystoreType;
-
     @Value("${test.kafka.bootstrap-servers}")
-    private long bootstrapServers;
-
-    @Value("${spring.kafka.consumer.auto-offset-reset}")
-    private String autoOffsetReset;
+    private String bootstrapServers;
 
     @Bean
     public ProducerFactory<String, TransactionCreated> producerFactory(){
-        Resource trustStore = resourceLoader.getResource("file:" + System.getProperty("user.dir") + kafkaTruststoreLocation);
-        String trustStorePass = jasyptStringEncryptor.decrypt(trustStorePassword);
-        Resource keyStore = resourceLoader.getResource("file:" + System.getProperty("user.dir") + keystoreLocation);
-        String keyStorePass = jasyptStringEncryptor.decrypt(keyStorePassword);
-        String keyPass = jasyptStringEncryptor.decrypt(keyPassword);
+        Resource trustStore = resourceLoader.getResource("file:" + System.getProperty("user.dir") + sslProperties.getTrustStoreLocation());
+        String trustStorePass = jasyptStringEncryptor.decrypt(sslProperties.getTrustStorePassword());
+        Resource keyStore = resourceLoader.getResource("file:" + System.getProperty("user.dir") + sslProperties.getKeyStoreLocation());
+        String keyStorePass = jasyptStringEncryptor.decrypt(sslProperties.getKeyStorePassword());
+        String keyPass = jasyptStringEncryptor.decrypt(sslProperties.getKeyPassword());
 
         Map<String, Object> props = new HashMap<>();
-        props.put("ssl.keystore.type", kafkaKeystoreType);
+        props.put("ssl.keystore.type", sslProperties.getKeyStoreType());
         try {
             props.put("ssl.keystore.location", keyStore.getFile().getAbsolutePath());
         } catch (IOException e) {
@@ -84,7 +61,6 @@ public class KafkaProducerConfig {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-
 
         props.put("ssl.keystore.password", keyStorePass);
         props.put("ssl.truststore.password", trustStorePass);
