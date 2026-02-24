@@ -9,6 +9,7 @@ import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.core.ProducerFactory;
 import test.prof.events.TransactionCreated;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -27,16 +28,9 @@ public class KafkaProducerConfig {
         props.put(ProducerConfig.MAX_IN_FLIGHT_REQUESTS_PER_CONNECTION, kafkaProperties.getProducer().getMaxInFlightRequestsPerConnection());
         props.put("schema.registry.url", kafkaProperties.getSchemaRegistryUrl());
 
-        KafkaProperties.Ssl ssl = kafkaProperties.getSsl();
-        if (ssl.getKeyStoreLocation() != null) {
-            props.put("security.protocol", kafkaProperties.getSecurityProtocol());
-            props.put("ssl.keystore.location", ssl.getKeyStoreLocation());
-            props.put("ssl.keystore.password", ssl.getKeyStorePassword());
-            props.put("ssl.truststore.location", ssl.getTrustStoreLocation());
-            props.put("ssl.truststore.password", ssl.getTrustStorePassword());
-            props.put("ssl.key.password", ssl.getKeyPassword());
-            props.put("ssl.keystore.type", ssl.getKeyStoreType());
-        }
+        KafkaConsumerConfig.addKafkaSslProperties(props, kafkaProperties);
+        KafkaConsumerConfig.addSchemaRegistrySslProperties(props, kafkaProperties);
+
         return new DefaultKafkaProducerFactory<>(props);
     }
 

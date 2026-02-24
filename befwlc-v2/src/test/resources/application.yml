@@ -15,6 +15,11 @@ kafka:
     trust-store-location: /cert/vesparapp_ipc_st_truststore.jks
     trust-store-password: changeme
     key-password: changeme
+  schema-registry-ssl:
+    ca-location: /cert/ca-bundle.crt
+    keystore-location: /cert/vespar_cert.pfx
+    keystore-password: changeme
+    enable-certificate-verification: true
   consumer:
     auto-offset-reset: latest
     poll-timeout-ms: 1000
