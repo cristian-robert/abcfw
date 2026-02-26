@@ -33,10 +33,12 @@ public class KafkaProperties {
 
     @Getter @Setter
     public static class SchemaRegistrySsl {
-        private String caLocation;
+        private String truststoreLocation;
+        private String truststorePassword;
+        private String truststoreType = "JKS";
         private String keystoreLocation;
         private String keystorePassword;
-        private boolean enableCertificateVerification = true;
+        private String keystoreType = "PKCS12";
     }
 
     @Getter @Setter
