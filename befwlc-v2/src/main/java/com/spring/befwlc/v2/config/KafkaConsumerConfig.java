@@ -35,6 +35,7 @@ public class KafkaConsumerConfig {
         props.put(ConsumerConfig.GROUP_ID_CONFIG, "test-engine-automation-" + System.getProperty("user.name", "default"));
 
         addKafkaSslProperties(props, kafkaProperties);
+        addSchemaRegistrySslProperties(props, kafkaProperties);
 
         return new DefaultKafkaConsumerFactory<>(props);
     }
@@ -72,11 +73,14 @@ public class KafkaConsumerConfig {
 
     static Map<String, Object> buildSchemaRegistrySslConfig(KafkaProperties kafkaProperties) {
         Map<String, Object> config = new HashMap<>();
-        KafkaProperties.SchemaRegistrySsl srSsl = kafkaProperties.getSchemaRegistrySsl();
-        if (srSsl.getTruststoreLocation() != null) {
-            config.put("ssl.truststore.location", srSsl.getTruststoreLocation());
-            config.put("ssl.truststore.password", srSsl.getTruststorePassword());
-            config.put("ssl.truststore.type", srSsl.getTruststoreType());
+        KafkaProperties.Ssl ssl = kafkaProperties.getSsl();
+        if (ssl.getTrustStoreLocation() != null) {
+            config.put("schema.registry.ssl.truststore.location", ssl.getTrustStoreLocation());
+            config.put("schema.registry.ssl.truststore.password", ssl.getTrustStorePassword());
+            config.put("schema.registry.ssl.keystore.location", ssl.getKeyStoreLocation());
+            config.put("schema.registry.ssl.keystore.password", ssl.getKeyStorePassword());
+            config.put("schema.registry.ssl.keystore.type", ssl.getKeyStoreType());
+            config.put("schema.registry.ssl.key.password", ssl.getKeyPassword());
         }
         return config;
     }

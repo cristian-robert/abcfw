@@ -10,17 +10,17 @@ kafka:
   consume-topic: test_consume_kafka_topic
   ssl:
     key-store-location: /cert/vespar_cert.pfx
-    key-store-password: changeme
+    key-store-password: V3sp3r.2023
     key-store-type: pkcs12
     trust-store-location: /cert/vesparapp_ipc_st_truststore.jks
-    trust-store-password: changeme
-    key-password: changeme
+    trust-store-password: 123qwe
+    key-password: V3sp3r.2023
   schema-registry-ssl:
     truststore-location: /cert/vesparapp_ipc_st_truststore.jks
-    truststore-password: changeme
+    truststore-password: 123qwe
     truststore-type: JKS
     keystore-location: /cert/vespar_cert.pfx
-    keystore-password: changeme
+    keystore-password: V3sp3r.2023
     keystore-type: PKCS12
   consumer:
     auto-offset-reset: latest
