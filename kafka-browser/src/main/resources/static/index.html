@@ -557,6 +557,8 @@
             ]));
             return;
         }
+        // Sort newest first
+        data.messages.sort(function(a, b) { return b.timestamp - a.timestamp; });
         data.messages.forEach(function(msg) { messagesArea.appendChild(buildCard(msg)); });
         if (data.hasMore) appendLoadMore();
     }

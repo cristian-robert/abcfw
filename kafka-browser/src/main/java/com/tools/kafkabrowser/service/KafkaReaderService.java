@@ -9,12 +9,17 @@ import io.confluent.kafka.schemaregistry.client.CachedSchemaRegistryClient;
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient;
 import io.confluent.kafka.serializers.KafkaAvroDeserializer;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.avro.generic.GenericDatumWriter;
+import org.apache.avro.generic.GenericRecord;
+import org.apache.avro.io.EncoderFactory;
+import org.apache.avro.io.JsonEncoder;
 import org.apache.kafka.clients.consumer.*;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.header.Header;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import org.springframework.stereotype.Service;
 
+import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.*;
@@ -37,6 +42,12 @@ public class KafkaReaderService {
         SchemaRegistryClient srClient = new CachedSchemaRegistryClient(
                 List.of(kafkaProperties.getSchemaRegistryUrl()), 1000, srConfig);
         this.avroDeserializer = new KafkaAvroDeserializer(srClient);
+
+        // Configure deserializer — without this, internal state (URL, reader mode) is not set
+        Map<String, Object> deserializerConfig = new HashMap<>(srConfig);
+        deserializerConfig.put("schema.registry.url", kafkaProperties.getSchemaRegistryUrl());
+        deserializerConfig.put("specific.avro.reader", false);
+        this.avroDeserializer.configure(deserializerConfig, false);
     }
 
     public MessagePage readMessages(String topic, int partition, long fromOffset, int limit) {
@@ -117,10 +128,23 @@ public class KafkaReaderService {
         Object payload;
         try {
             Object deserialized = avroDeserializer.deserialize(record.topic(), record.value());
-            payload = objectMapper.readTree(deserialized.toString());
+            if (deserialized instanceof GenericRecord genericRecord) {
+                // Use Avro's JsonEncoder for complete schema-aware JSON output
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                JsonEncoder encoder = EncoderFactory.get().jsonEncoder(
+                        genericRecord.getSchema(), baos, true);
+                GenericDatumWriter<GenericRecord> datumWriter =
+                        new GenericDatumWriter<>(genericRecord.getSchema());
+                datumWriter.write(genericRecord, encoder);
+                encoder.flush();
+                payload = objectMapper.readTree(baos.toString(StandardCharsets.UTF_8));
+            } else {
+                // Primitive or non-record Avro type
+                payload = objectMapper.readTree(objectMapper.writeValueAsString(deserialized));
+            }
         } catch (Exception e) {
-            log.debug("Avro deserialization failed for topic={} offset={}, falling back to string",
-                    record.topic(), record.offset());
+            log.warn("Avro deserialization failed for topic={} offset={}: {}",
+                    record.topic(), record.offset(), e.getMessage());
             payload = record.value() != null ? new String(record.value(), StandardCharsets.UTF_8) : null;
         }
 
