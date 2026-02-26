@@ -1,5 +1,6 @@
 "use client";
 
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -54,44 +55,50 @@ export function MessageToolbar({
       <div className="flex-1" />
 
       <div className="flex items-center gap-2">
-        <Select
-          value={String(partition)}
-          onValueChange={(v) => onPartitionChange(Number(v))}
-        >
-          <SelectTrigger className="h-7 w-[100px] text-xs bg-white/[0.04] border-white/[0.08]">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="-1">All parts.</SelectItem>
-            {Array.from({ length: partitionCount }).map((_, i) => (
-              <SelectItem key={i} value={String(i)}>
-                Part. {i}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        <Select
-          value={String(limit)}
-          onValueChange={(v) => onLimitChange(Number(v))}
-        >
-          <SelectTrigger className="h-7 w-[70px] text-xs bg-white/[0.04] border-white/[0.08]">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {[10, 25, 50, 100].map((n) => (
-              <SelectItem key={n} value={String(n)}>
-                {n}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="flex items-center rounded-md border border-white/[0.08] bg-white/[0.04] overflow-hidden">
+          <Select
+            value={String(partition)}
+            onValueChange={(v) => onPartitionChange(Number(v))}
+          >
+            <SelectTrigger className="h-7 w-[100px] text-xs border-0 bg-transparent shadow-none focus:ring-0 focus:ring-offset-0 rounded-none">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="-1">All parts.</SelectItem>
+              {Array.from({ length: partitionCount }).map((_, i) => (
+                <SelectItem key={i} value={String(i)}>
+                  Part. {i}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <div className="w-px h-4 bg-white/[0.1] shrink-0" />
+          <Select
+            value={String(limit)}
+            onValueChange={(v) => onLimitChange(Number(v))}
+          >
+            <SelectTrigger className="h-7 w-[70px] text-xs border-0 bg-transparent shadow-none focus:ring-0 focus:ring-offset-0 rounded-none">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {[10, 25, 50, 100].map((n) => (
+                <SelectItem key={n} value={String(n)}>
+                  {n}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
         <Toggle
           pressed={useSchema}
           onPressedChange={onUseSchemaChange}
           size="sm"
-          className="h-7 gap-1.5 text-xs data-[state=on]:bg-teal-500/15 data-[state=on]:text-teal-300"
+          className={cn(
+            "h-7 gap-1.5 text-xs",
+            "data-[state=on]:bg-emerald-500/15 data-[state=on]:text-emerald-300",
+            useSchema && "shadow-[0_0_10px_rgba(16,185,129,0.15)]"
+          )}
           aria-label="Toggle schema deserialization"
         >
           <FileJson className="h-3.5 w-3.5" />

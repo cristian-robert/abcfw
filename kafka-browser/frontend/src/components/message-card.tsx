@@ -25,14 +25,21 @@ export function MessageCard({ message, index }: MessageCardProps) {
     <Collapsible open={open} onOpenChange={setOpen}>
       <div
         className={cn(
-          "border border-white/[0.06] rounded-lg overflow-hidden transition-colors",
-          "bg-white/[0.02] hover:bg-white/[0.03]",
-          open && "bg-white/[0.03]"
+          "border rounded-lg overflow-hidden transition-all duration-200",
+          "bg-[#111113]",
+          open
+            ? "border-white/[0.1] glow-teal"
+            : "border-white/[0.08] hover-lift hover:bg-[#131315]"
         )}
         style={{ animationDelay: `${index * 30}ms` }}
       >
         <CollapsibleTrigger className="w-full">
-          <div className="flex items-center gap-3 px-4 py-2.5 text-xs cursor-pointer">
+          <div
+            className={cn(
+              "flex items-center gap-3 px-4 py-2.5 text-xs cursor-pointer",
+              open && "border-b border-teal-500/10"
+            )}
+          >
             <ChevronRight
               className={cn(
                 "h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform duration-150",
@@ -58,9 +65,12 @@ export function MessageCard({ message, index }: MessageCardProps) {
               </span>
 
               {message.schemaName && (
-                <span className="text-teal-400/70 truncate font-mono">
+                <Badge
+                  variant="outline"
+                  className="text-[10px] h-4 px-1.5 border-teal-500/30 text-teal-400/80 font-mono shrink-0"
+                >
                   {message.schemaName}
-                </span>
+                </Badge>
               )}
 
               {message.error && (
@@ -79,16 +89,16 @@ export function MessageCard({ message, index }: MessageCardProps) {
         <CollapsibleContent>
           <div className="border-t border-white/[0.06]">
             <Tabs defaultValue="message" className="w-full">
-              <TabsList className="w-full justify-start rounded-none border-b border-white/[0.06] bg-transparent h-8 px-4">
+              <TabsList className="w-full justify-start rounded-none border-b border-white/[0.06] bg-transparent h-8 px-4 gap-0">
                 <TabsTrigger
                   value="message"
-                  className="text-xs h-7 rounded-sm data-[state=active]:bg-white/[0.06]"
+                  className="text-xs h-8 rounded-none border-b-2 border-transparent data-[state=active]:border-teal-400 data-[state=active]:text-teal-300 data-[state=active]:bg-transparent data-[state=active]:shadow-none"
                 >
                   Message
                 </TabsTrigger>
                 <TabsTrigger
                   value="headers"
-                  className="text-xs h-7 rounded-sm data-[state=active]:bg-white/[0.06]"
+                  className="text-xs h-8 rounded-none border-b-2 border-transparent data-[state=active]:border-teal-400 data-[state=active]:text-teal-300 data-[state=active]:bg-transparent data-[state=active]:shadow-none"
                 >
                   Headers
                   {message.headers && Object.keys(message.headers).length > 0 && (
@@ -99,19 +109,19 @@ export function MessageCard({ message, index }: MessageCardProps) {
                 </TabsTrigger>
                 <TabsTrigger
                   value="metadata"
-                  className="text-xs h-7 rounded-sm data-[state=active]:bg-white/[0.06]"
+                  className="text-xs h-8 rounded-none border-b-2 border-transparent data-[state=active]:border-teal-400 data-[state=active]:text-teal-300 data-[state=active]:bg-transparent data-[state=active]:shadow-none"
                 >
                   Metadata
                 </TabsTrigger>
                 <TabsTrigger
                   value="raw"
-                  className="text-xs h-7 rounded-sm data-[state=active]:bg-white/[0.06]"
+                  className="text-xs h-8 rounded-none border-b-2 border-transparent data-[state=active]:border-teal-400 data-[state=active]:text-teal-300 data-[state=active]:bg-transparent data-[state=active]:shadow-none"
                 >
                   Raw
                 </TabsTrigger>
               </TabsList>
 
-              <div className="max-h-[500px] overflow-auto">
+              <div className="max-h-[600px] overflow-auto">
                 <TabsContent value="message" className="m-0 p-4">
                   {message.error ? (
                     <div className="text-xs text-destructive bg-destructive/10 rounded-md p-3">

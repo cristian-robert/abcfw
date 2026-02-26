@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { TopicInfo } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
@@ -29,14 +30,49 @@ export function TopicSidebar({
   onSelectTopic,
   totalCount,
 }: TopicSidebarProps) {
+  const [isConnected, setIsConnected] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    const checkHealth = async () => {
+      try {
+        const res = await fetch("/api/health");
+        setIsConnected(res.ok);
+      } catch {
+        setIsConnected(false);
+      }
+    };
+
+    checkHealth();
+    const interval = setInterval(checkHealth, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <aside className="w-[280px] shrink-0 border-r border-border flex flex-col bg-[#0d0d0e]">
       <div className="p-4 border-b border-border">
         <div className="flex items-center gap-2 mb-3">
           <Database className="h-4 w-4 text-teal-400" />
-          <h1 className="text-sm font-semibold tracking-tight">
+          <h1 className="text-sm font-semibold tracking-tight text-gradient-teal">
             Kafka Browser
           </h1>
+          <div className="flex-1" />
+          <div
+            className={cn(
+              "h-2 w-2 rounded-full shrink-0 transition-colors",
+              isConnected === null
+                ? "bg-zinc-500"
+                : isConnected
+                  ? "bg-emerald-400 animate-pulse-dot"
+                  : "bg-red-400"
+            )}
+            title={
+              isConnected === null
+                ? "Checking connection..."
+                : isConnected
+                  ? "Connected"
+                  : "Disconnected"
+            }
+          />
         </div>
         <div className="relative">
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
@@ -47,6 +83,11 @@ export function TopicSidebar({
             className="pl-8 h-8 text-xs bg-white/[0.04] border-white/[0.08] focus-visible:ring-teal-500/30"
           />
         </div>
+        {search && (
+          <p className="text-[10px] text-muted-foreground/50 mt-1.5 px-0.5">
+            {topics.length} of {totalCount} topics
+          </p>
+        )}
       </div>
 
       <ScrollArea className="flex-1">
@@ -70,12 +111,13 @@ export function TopicSidebar({
                 key={topic.name}
                 onClick={() => onSelectTopic(topic.name)}
                 className={cn(
-                  "w-full flex items-center justify-between gap-2 px-3 py-2 rounded-md text-left text-xs transition-colors",
-                  "hover:bg-white/[0.05]",
+                  "w-full flex items-center justify-between gap-2 px-3 py-2 rounded-md text-left text-xs transition-all duration-200 border-l-2",
+                  "hover:bg-white/[0.07]",
                   selectedTopic === topic.name
-                    ? "bg-teal-500/10 text-teal-300 border-l-2 border-teal-400"
-                    : "text-muted-foreground"
+                    ? "bg-teal-500/10 text-teal-300 border-teal-400 shadow-[inset_2px_0_8px_rgba(45,212,191,0.06)]"
+                    : "text-muted-foreground border-transparent"
                 )}
+                style={{ animationDelay: `${topics.indexOf(topic) * 20}ms` }}
               >
                 <span className="truncate font-mono">{topic.name}</span>
                 <Badge

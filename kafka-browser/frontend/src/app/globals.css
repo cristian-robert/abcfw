@@ -125,20 +125,43 @@
   }
 }
 
+/* Smooth transitions for interactive elements */
+@layer base {
+  button,
+  a,
+  [role="tab"],
+  [role="button"],
+  input,
+  select,
+  textarea {
+    transition: color 0.15s ease, background-color 0.15s ease,
+      border-color 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+  }
+}
+
+/* Custom selection color */
+::selection {
+  background: rgba(45, 212, 191, 0.2);
+  color: inherit;
+}
+
 /* Custom scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
   background: rgba(255 255 255 / 0.1);
-  border-radius: 3px;
+  border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(255 255 255 / 0.2);
+}
+::-webkit-scrollbar-thumb:active {
+  background: rgba(255 255 255 / 0.25);
 }
 
 /* Message entry animation */
@@ -155,4 +178,120 @@
 
 [data-state="open"] > div {
   animation: fade-in-up 0.15s ease-out;
+}
+
+/* Reduced motion: respect user preference */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Custom focus ring — teal accent for keyboard nav */
+:focus-visible {
+  outline: 2px solid rgba(45, 212, 191, 0.5);
+  outline-offset: 2px;
+}
+
+/* Active press feedback — subtle scale-down */
+button:active:not(:disabled),
+[role="button"]:active:not(:disabled) {
+  transform: scale(0.97);
+  transition: transform 0.1s ease;
+}
+
+/* Float animation for empty state */
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* Health dot pulse when connected */
+@keyframes pulse-dot {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(52, 211, 153, 0);
+  }
+}
+
+.animate-pulse-dot {
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+
+/* Stagger-in animation for list items */
+@keyframes slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-slide-in {
+  animation: slide-in 0.2s ease-out both;
+}
+
+/* Card hover lift */
+.hover-lift {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.hover-lift:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+
+/* Subtle glow for expanded/active states */
+.glow-teal {
+  box-shadow: 0 0 20px rgba(45, 212, 191, 0.06),
+    0 0 4px rgba(45, 212, 191, 0.04);
+}
+
+/* Gradient text utility */
+.text-gradient-teal {
+  background: linear-gradient(135deg, #2dd4bf, #38bdf8);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Shimmer loading effect */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255 255 255 / 0.04) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2s ease-in-out infinite;
 }
