@@ -575,6 +575,11 @@
         meta.appendChild(labelVal('O:', msg.offset));
         meta.appendChild(labelVal('T:', new Date(msg.timestamp).toLocaleString()));
         if (msg.key) meta.appendChild(labelVal('K:', msg.key));
+        if (msg.schemaName) meta.appendChild(labelVal('S:', msg.schemaName));
+        if (msg.error) {
+            var errSpan = el('span', { textContent: msg.error, style: 'color:var(--error);font-size:11px' });
+            meta.appendChild(errSpan);
+        }
         hdr.appendChild(meta);
         card.appendChild(hdr);
 
