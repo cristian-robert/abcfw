@@ -1,7 +1,6 @@
 package com.spring.befwlc.v2.config;
 
 import io.confluent.kafka.schemaregistry.client.CachedSchemaRegistryClient;
-import io.confluent.kafka.schemaregistry.client.SchemaRegistryClientConfig;
 import io.confluent.kafka.serializers.KafkaAvroDeserializer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
@@ -35,8 +34,6 @@ public class KafkaConsumerConfig {
         props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, kafkaProperties.getConsumer().getAutoOffsetReset());
         props.put(ConsumerConfig.GROUP_ID_CONFIG, "test-engine-automation-" + System.getProperty("user.name", "default"));
 
-        props.put("schema.registry.url", kafkaProperties.getSchemaRegistryUrl());
-
         addKafkaSslProperties(props, kafkaProperties);
         addSchemaRegistrySslProperties(props, kafkaProperties);
 
@@ -67,20 +64,23 @@ public class KafkaConsumerConfig {
 
     static void addSchemaRegistrySslProperties(Map<String, Object> props, KafkaProperties kafkaProperties) {
         KafkaProperties.SchemaRegistrySsl srSsl = kafkaProperties.getSchemaRegistrySsl();
-        if (srSsl.getCaLocation() != null) {
-            props.put(SchemaRegistryClientConfig.CLIENT_NAMESPACE + "ssl.truststore.location", srSsl.getCaLocation());
-            props.put(SchemaRegistryClientConfig.CLIENT_NAMESPACE + "ssl.keystore.location", srSsl.getKeystoreLocation());
-            props.put(SchemaRegistryClientConfig.CLIENT_NAMESPACE + "ssl.keystore.password", srSsl.getKeystorePassword());
+        if (srSsl.getTruststoreLocation() != null) {
+            props.put("schema.registry.ssl.truststore.location", srSsl.getTruststoreLocation());
+            props.put("schema.registry.ssl.truststore.password", srSsl.getTruststorePassword());
+            props.put("schema.registry.ssl.truststore.type", srSsl.getTruststoreType());
         }
     }
 
     static Map<String, Object> buildSchemaRegistrySslConfig(KafkaProperties kafkaProperties) {
         Map<String, Object> config = new HashMap<>();
-        KafkaProperties.SchemaRegistrySsl srSsl = kafkaProperties.getSchemaRegistrySsl();
-        if (srSsl.getCaLocation() != null) {
-            config.put(SchemaRegistryClientConfig.CLIENT_NAMESPACE + "ssl.truststore.location", srSsl.getCaLocation());
-            config.put(SchemaRegistryClientConfig.CLIENT_NAMESPACE + "ssl.keystore.location", srSsl.getKeystoreLocation());
-            config.put(SchemaRegistryClientConfig.CLIENT_NAMESPACE + "ssl.keystore.password", srSsl.getKeystorePassword());
+        KafkaProperties.Ssl ssl = kafkaProperties.getSsl();
+        if (ssl.getTrustStoreLocation() != null) {
+            config.put("schema.registry.ssl.truststore.location", ssl.getTrustStoreLocation());
+            config.put("schema.registry.ssl.truststore.password", ssl.getTrustStorePassword());
+            config.put("schema.registry.ssl.keystore.location", ssl.getKeyStoreLocation());
+            config.put("schema.registry.ssl.keystore.password", ssl.getKeyStorePassword());
+            config.put("schema.registry.ssl.keystore.type", ssl.getKeyStoreType());
+            config.put("schema.registry.ssl.key.password", ssl.getKeyPassword());
         }
         return config;
     }

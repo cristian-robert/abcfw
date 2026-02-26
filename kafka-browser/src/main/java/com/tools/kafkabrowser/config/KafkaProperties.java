@@ -1,4 +1,4 @@
-package com.spring.befwlc.v2.config;
+package com.tools.kafkabrowser.config;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
@@ -14,12 +14,9 @@ public class KafkaProperties {
     @NotBlank private String bootstrapServers;
     @NotBlank private String schemaRegistryUrl;
     @NotBlank private String securityProtocol;
-    @NotBlank private String publishTopic;
-    @NotBlank private String consumeTopic;
     private Ssl ssl = new Ssl();
     private SchemaRegistrySsl schemaRegistrySsl = new SchemaRegistrySsl();
     private Consumer consumer = new Consumer();
-    private Producer producer = new Producer();
 
     @Getter @Setter
     public static class Ssl {
@@ -44,14 +41,6 @@ public class KafkaProperties {
     @Getter @Setter
     public static class Consumer {
         private String autoOffsetReset = "latest";
-        private int pollTimeoutMs = 1000;
-    }
-
-    @Getter @Setter
-    public static class Producer {
-        private String acks = "all";
-        private int retries = 10;
-        private boolean enableIdempotence = false;
-        private int maxInFlightRequestsPerConnection = 1;
+        private int pollTimeoutMs = 3000;
     }
 }
