@@ -116,6 +116,7 @@
   --sidebar-ring: oklch(0.556 0 0);
 }
 
+/* === Base Layer === */
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -125,27 +126,32 @@
   }
 }
 
-/* Smooth transitions for interactive elements */
+/* Smooth transitions for interactive elements (color properties only — never height/overflow) */
 @layer base {
   button,
   a,
   [role="tab"],
-  [role="button"],
   input,
   select,
   textarea {
-    transition: color 0.15s ease, background-color 0.15s ease,
-      border-color 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+    transition: color 0.2s ease, background-color 0.2s ease,
+      border-color 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
   }
 }
 
-/* Custom selection color */
+/* === Selection === */
 ::selection {
   background: rgba(45, 212, 191, 0.2);
   color: inherit;
 }
 
-/* Custom scrollbar */
+/* === Focus — teal accent for keyboard navigation === */
+:focus-visible {
+  outline: 2px solid rgba(45, 212, 191, 0.5);
+  outline-offset: 2px;
+}
+
+/* === Scrollbar — polished, rounded, responsive === */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -154,17 +160,19 @@
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255 255 255 / 0.1);
+  background: rgba(255 255 255 / 0.08);
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255 255 255 / 0.2);
+  background: rgba(255 255 255 / 0.16);
 }
 ::-webkit-scrollbar-thumb:active {
-  background: rgba(255 255 255 / 0.25);
+  background: rgba(255 255 255 / 0.22);
 }
 
-/* Message entry animation */
+/* === Animations === */
+
+/* Collapsible content entry */
 @keyframes fade-in-up {
   from {
     opacity: 0;
@@ -176,43 +184,34 @@
   }
 }
 
-[data-state="open"] > div {
+[data-slot="collapsible-content"] > div {
   animation: fade-in-up 0.15s ease-out;
 }
 
-/* Reduced motion: respect user preference */
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
+/* Staggered card entry — used on message cards in the list */
+@keyframes card-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
-/* Custom focus ring — teal accent for keyboard nav */
-:focus-visible {
-  outline: 2px solid rgba(45, 212, 191, 0.5);
-  outline-offset: 2px;
+.animate-card-enter {
+  animation: card-enter 0.25s ease-out both;
 }
 
-/* Active press feedback — subtle scale-down */
-button:active:not(:disabled),
-[role="button"]:active:not(:disabled) {
-  transform: scale(0.97);
-  transition: transform 0.1s ease;
-}
-
-/* Float animation for empty state */
+/* Empty state float */
 @keyframes float {
   0%,
   100% {
     transform: translateY(0);
   }
   50% {
-    transform: translateY(-4px);
+    transform: translateY(-6px);
   }
 }
 
@@ -220,7 +219,7 @@ button:active:not(:disabled),
   animation: float 3s ease-in-out infinite;
 }
 
-/* Health dot pulse when connected */
+/* Health status pulse */
 @keyframes pulse-dot {
   0%,
   100% {
@@ -235,39 +234,15 @@ button:active:not(:disabled),
   animation: pulse-dot 2s ease-in-out infinite;
 }
 
-/* Stagger-in animation for list items */
-@keyframes slide-in {
-  from {
-    opacity: 0;
-    transform: translateX(-6px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
+/* === Utility Classes === */
 
-.animate-slide-in {
-  animation: slide-in 0.2s ease-out both;
-}
-
-/* Card hover lift */
-.hover-lift {
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.hover-lift:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
-}
-
-/* Subtle glow for expanded/active states */
+/* Subtle teal glow for expanded/active cards */
 .glow-teal {
-  box-shadow: 0 0 20px rgba(45, 212, 191, 0.06),
-    0 0 4px rgba(45, 212, 191, 0.04);
+  box-shadow: 0 0 24px rgba(45, 212, 191, 0.07),
+    0 0 6px rgba(45, 212, 191, 0.04);
 }
 
-/* Gradient text utility */
+/* Gradient text */
 .text-gradient-teal {
   background: linear-gradient(135deg, #2dd4bf, #38bdf8);
   -webkit-background-clip: text;
@@ -275,23 +250,14 @@ button:active:not(:disabled),
   background-clip: text;
 }
 
-/* Shimmer loading effect */
-@keyframes shimmer {
-  0% {
-    background-position: -200% 0;
+/* === Accessibility: Reduced Motion === */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
-  100% {
-    background-position: 200% 0;
-  }
-}
-
-.animate-shimmer {
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    rgba(255 255 255 / 0.04) 50%,
-    transparent 100%
-  );
-  background-size: 200% 100%;
-  animation: shimmer 2s ease-in-out infinite;
 }
