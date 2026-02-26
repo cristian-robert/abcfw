@@ -53,7 +53,7 @@ public class KafkaReaderService {
         log.info("Schema Registry client created for {}", kafkaProperties.getSchemaRegistryUrl());
     }
 
-    public MessagePage readMessages(String topic, int partition, long fromOffset, int limit) {
+    public MessagePage readMessages(String topic, int partition, long fromOffset, int limit, boolean useSchema) {
         Properties props = buildConsumerProps();
 
         try (KafkaConsumer<byte[], byte[]> consumer = new KafkaConsumer<>(props)) {
@@ -95,7 +95,7 @@ public class KafkaReaderService {
                 emptyPolls = 0;
                 for (ConsumerRecord<byte[], byte[]> record : records) {
                     if (messages.size() >= limit) break;
-                    messages.add(toDto(record));
+                    messages.add(toDto(record, useSchema));
                 }
             }
 
@@ -112,7 +112,7 @@ public class KafkaReaderService {
         }
     }
 
-    private KafkaMessageDto toDto(ConsumerRecord<byte[], byte[]> record) {
+    private KafkaMessageDto toDto(ConsumerRecord<byte[], byte[]> record, boolean useSchema) {
         String key = record.key() != null ? new String(record.key(), StandardCharsets.UTF_8) : null;
 
         Map<String, String> headers = new LinkedHashMap<>();
@@ -121,50 +121,56 @@ public class KafkaReaderService {
             headers.put(header.key(), bytes != null ? new String(bytes, StandardCharsets.UTF_8) : null);
         }
 
-        Object payload;
+        byte[] valueBytes = record.value();
+        Integer schemaId = null;
+        String schemaType = null;
         String schemaName = null;
+        Object message = null;
+        String rawMessage = null;
         String error = null;
 
-        try {
-            byte[] valueBytes = record.value();
-            if (valueBytes == null || valueBytes.length < 5) {
-                payload = null;
-                error = "Empty or too-short value (" + (valueBytes == null ? 0 : valueBytes.length) + " bytes)";
-            } else if (valueBytes[0] != MAGIC_BYTE) {
-                // Not Avro — try as plain JSON or string
-                String raw = new String(valueBytes, StandardCharsets.UTF_8);
+        if (valueBytes == null || valueBytes.length == 0) {
+            rawMessage = null;
+            error = "Empty value";
+        } else if (valueBytes.length >= 5 && valueBytes[0] == MAGIC_BYTE) {
+            // Avro wire format: [0x0][4-byte schema ID][binary data]
+            schemaId = ByteBuffer.wrap(valueBytes, 1, 4).getInt();
+            schemaType = "AVRO";
+
+            // Raw message is the binary bytes as-is (lossy but readable for debugging)
+            rawMessage = new String(valueBytes, StandardCharsets.UTF_8);
+
+            if (useSchema) {
                 try {
-                    payload = objectMapper.readTree(raw);
+                    io.confluent.kafka.schemaregistry.ParsedSchema parsedSchema =
+                            schemaRegistryClient.getSchemaById(schemaId);
+                    Schema writerSchema = ((AvroSchema) parsedSchema).rawSchema();
+                    schemaName = writerSchema.getFullName();
+                    log.debug("Schema {} (id={}) with {} fields",
+                            schemaName, schemaId, writerSchema.getFields().size());
+
+                    GenericDatumReader<GenericRecord> reader = new GenericDatumReader<>(writerSchema);
+                    BinaryDecoder decoder = DecoderFactory.get().binaryDecoder(
+                            valueBytes, 5, valueBytes.length - 5, null);
+                    GenericRecord genericRecord = reader.read(null, decoder);
+
+                    message = avroToJson(genericRecord);
+                    log.debug("Deserialized {} at offset {}", schemaName, record.offset());
                 } catch (Exception e) {
-                    payload = raw;
+                    log.error("Schema deserialization failed for topic={} offset={} schemaId={}",
+                            record.topic(), record.offset(), schemaId, e);
+                    error = e.getClass().getSimpleName() + ": " + e.getMessage();
                 }
-            } else {
-                // Avro wire format: [magic byte][4-byte schema ID][avro binary data]
-                int schemaId = ByteBuffer.wrap(valueBytes, 1, 4).getInt();
-                log.debug("topic={} offset={} schemaId={}", record.topic(), record.offset(), schemaId);
-
-                // Fetch writer schema from Schema Registry
-                io.confluent.kafka.schemaregistry.ParsedSchema parsedSchema =
-                        schemaRegistryClient.getSchemaById(schemaId);
-                Schema writerSchema = ((AvroSchema) parsedSchema).rawSchema();
-                schemaName = writerSchema.getFullName();
-                log.debug("Resolved schema: {} ({} fields)", schemaName, writerSchema.getFields().size());
-
-                // Deserialize binary Avro into GenericRecord
-                GenericDatumReader<GenericRecord> reader = new GenericDatumReader<>(writerSchema);
-                BinaryDecoder decoder = DecoderFactory.get().binaryDecoder(
-                        valueBytes, 5, valueBytes.length - 5, null);
-                GenericRecord genericRecord = reader.read(null, decoder);
-
-                // Recursively convert to clean Jackson JSON (unwraps unions, handles nested records)
-                payload = avroToJson(genericRecord);
-                log.debug("Deserialized {} at offset {} -> {} fields",
-                        schemaName, record.offset(), ((ObjectNode) payload).size());
             }
-        } catch (Exception e) {
-            log.error("Deserialization failed for topic={} offset={}", record.topic(), record.offset(), e);
-            error = e.getClass().getSimpleName() + ": " + e.getMessage();
-            payload = record.value() != null ? new String(record.value(), StandardCharsets.UTF_8) : null;
+        } else {
+            // Not Avro — plain JSON or string
+            schemaType = "NONE";
+            rawMessage = new String(valueBytes, StandardCharsets.UTF_8);
+            try {
+                message = objectMapper.readTree(rawMessage);
+            } catch (Exception e) {
+                message = rawMessage;
+            }
         }
 
         return new KafkaMessageDto(
@@ -174,15 +180,16 @@ public class KafkaReaderService {
                 record.timestamp(),
                 key,
                 headers,
-                payload,
+                schemaId,
+                schemaType,
                 schemaName,
+                message,
+                rawMessage,
                 error
         );
     }
 
     // ---- Recursive Avro GenericRecord -> Jackson JsonNode converter ----
-    // Handles: records, unions, arrays, maps, enums, fixed, bytes, primitives
-    // Union types are unwrapped — no {"string": "value"} wrapping
 
     private ObjectNode avroToJson(GenericRecord record) {
         ObjectNode node = objectMapper.createObjectNode();
@@ -198,11 +205,9 @@ public class KafkaReaderService {
             return objectMapper.nullNode();
         }
 
-        // Unwrap union: pick the actual type branch (skip "null")
         if (schema.getType() == Schema.Type.UNION) {
             for (Schema branch : schema.getTypes()) {
                 if (branch.getType() == Schema.Type.NULL) continue;
-                // Try to match the value to this branch
                 return convertValue(value, branch);
             }
             return objectMapper.nullNode();
@@ -234,8 +239,7 @@ public class KafkaReaderService {
                 Schema valueSchema = schema.getValueType();
                 if (value instanceof Map<?, ?> map) {
                     for (Map.Entry<?, ?> entry : map.entrySet()) {
-                        String k = entry.getKey().toString();
-                        mapNode.set(k, convertValue(entry.getValue(), valueSchema));
+                        mapNode.set(entry.getKey().toString(), convertValue(entry.getValue(), valueSchema));
                     }
                 }
                 yield mapNode;

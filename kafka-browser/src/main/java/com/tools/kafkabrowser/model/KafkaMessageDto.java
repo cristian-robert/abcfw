@@ -9,7 +9,10 @@ public record KafkaMessageDto(
         long timestamp,
         String key,
         Map<String, String> headers,
-        Object payload,
+        Integer schemaId,
+        String schemaType,
         String schemaName,
+        Object message,
+        String rawMessage,
         String error
 ) {}

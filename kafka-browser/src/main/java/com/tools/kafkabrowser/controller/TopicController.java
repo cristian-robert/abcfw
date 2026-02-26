@@ -30,8 +30,9 @@ public class TopicController {
             @PathVariable String topic,
             @RequestParam(defaultValue = "-1") int partition,
             @RequestParam(defaultValue = "-1") long offset,
-            @RequestParam(defaultValue = "25") int limit) {
-        return readerService.readMessages(topic, partition, offset, Math.min(limit, 200));
+            @RequestParam(defaultValue = "25") int limit,
+            @RequestParam(defaultValue = "true") boolean useSchema) {
+        return readerService.readMessages(topic, partition, offset, Math.min(limit, 200), useSchema);
     }
 
     @GetMapping("/health")

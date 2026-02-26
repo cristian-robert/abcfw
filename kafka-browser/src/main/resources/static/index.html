@@ -362,6 +362,33 @@
 
         .load-more { text-align: center; padding: 12px; }
 
+        /* Toggle switch */
+        .toggle-wrap { display: flex; align-items: center; gap: 6px; margin-left: 8px; }
+        .toggle-label { font-size: 12px; color: var(--text-secondary); }
+        .toggle { position: relative; width: 36px; height: 20px; cursor: pointer; }
+        .toggle input { display: none; }
+        .toggle-track {
+            position: absolute; inset: 0;
+            background: var(--border); border-radius: 10px;
+            transition: background 0.2s;
+        }
+        .toggle input:checked + .toggle-track { background: #1f6feb; }
+        .toggle-thumb {
+            position: absolute; top: 2px; left: 2px;
+            width: 16px; height: 16px;
+            background: var(--text-primary); border-radius: 50%;
+            transition: left 0.2s;
+        }
+        .toggle input:checked ~ .toggle-thumb { left: 18px; }
+
+        /* Metadata grid */
+        .meta-grid {
+            display: grid; grid-template-columns: auto 1fr;
+            gap: 4px 16px; font-size: 12px; padding: 12px 16px;
+        }
+        .meta-grid .mk { color: var(--text-muted); }
+        .meta-grid .mv { font-family: var(--font-mono); font-size: 11px; }
+
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
@@ -402,6 +429,15 @@
                     <option value="100">100</option>
                 </select>
 
+                <div class="toggle-wrap">
+                    <span class="toggle-label">Use Schema</span>
+                    <label class="toggle">
+                        <input type="checkbox" id="useSchemaToggle" checked>
+                        <div class="toggle-track"></div>
+                        <div class="toggle-thumb"></div>
+                    </label>
+                </div>
+
                 <button class="btn btn-primary" id="fetchBtn">Fetch</button>
                 <button class="btn" id="refreshBtn">Refresh</button>
             </div>
@@ -437,6 +473,7 @@
     var partitionSelect = document.getElementById('partitionSelect');
     var offsetInput = document.getElementById('offsetInput');
     var limitSelect = document.getElementById('limitSelect');
+    var useSchemaToggle = document.getElementById('useSchemaToggle');
     var fetchBtn = document.getElementById('fetchBtn');
     var refreshBtn = document.getElementById('refreshBtn');
     var loading = document.getElementById('loading');
@@ -531,11 +568,13 @@
         var partition = partitionSelect.value;
         var offset = offsetInput.value || -1;
         var limit = limitSelect.value;
+        var useSchema = useSchemaToggle.checked;
 
         try {
             var data = await api(
                 '/api/topics/' + encodeURIComponent(activeTopic) +
-                '/messages?partition=' + partition + '&offset=' + offset + '&limit=' + limit
+                '/messages?partition=' + partition + '&offset=' + offset + '&limit=' + limit +
+                '&useSchema=' + useSchema
             );
             currentMessages = data.messages;
             renderMessages(data);
@@ -574,7 +613,8 @@
         meta.appendChild(labelVal('P:', msg.partition));
         meta.appendChild(labelVal('O:', msg.offset));
         meta.appendChild(labelVal('T:', new Date(msg.timestamp).toLocaleString()));
-        if (msg.key) meta.appendChild(labelVal('K:', msg.key));
+        if (msg.schemaId != null) meta.appendChild(labelVal('ID:', msg.schemaId));
+        if (msg.schemaType) meta.appendChild(labelVal('', msg.schemaType));
         if (msg.schemaName) meta.appendChild(labelVal('S:', msg.schemaName));
         if (msg.error) {
             var errSpan = el('span', { textContent: msg.error, style: 'color:var(--error);font-size:11px' });
@@ -586,8 +626,9 @@
         var body = el('div', { className: 'msg-body' });
         var hdrCount = Object.keys(msg.headers || {}).length;
         var tabDefs = [
-            { id: 'payload', label: 'Payload' },
+            { id: 'message', label: 'Message' },
             { id: 'headers', label: 'Headers (' + hdrCount + ')' },
+            { id: 'metadata', label: 'Metadata' },
             { id: 'raw', label: 'Raw' }
         ];
 
@@ -603,17 +644,47 @@
         });
         body.appendChild(tabBar);
 
-        // Payload tab
-        var payloadPane = el('div', { className: 'msg-tab-content active', 'data-tab': 'payload' });
-        var payloadPre = el('pre', { className: 'json-view' });
-        payloadPre.appendChild(highlightJson(msg.payload));
-        payloadPane.appendChild(payloadPre);
-        body.appendChild(payloadPane);
+        // Message tab — decoded (useSchema) or raw
+        var msgPane = el('div', { className: 'msg-tab-content active', 'data-tab': 'message' });
+        if (msg.message != null) {
+            var msgPre = el('pre', { className: 'json-view' });
+            msgPre.appendChild(highlightJson(msg.message));
+            msgPane.appendChild(msgPre);
+        } else if (msg.rawMessage != null) {
+            msgPane.appendChild(el('pre', { className: 'json-view', textContent: msg.rawMessage }));
+        } else {
+            msgPane.appendChild(el('div', { textContent: 'No message body', style: 'padding:12px;color:var(--text-muted);font-size:12px' }));
+        }
+        body.appendChild(msgPane);
 
         // Headers tab
         var headersPane = el('div', { className: 'msg-tab-content', 'data-tab': 'headers' });
         headersPane.appendChild(buildHeaders(msg.headers));
         body.appendChild(headersPane);
+
+        // Metadata tab
+        var metaPane = el('div', { className: 'msg-tab-content', 'data-tab': 'metadata' });
+        var grid = el('div', { className: 'meta-grid' });
+        var metaFields = [
+            ['Topic', msg.topic],
+            ['Partition', msg.partition],
+            ['Offset', msg.offset],
+            ['Timestamp', new Date(msg.timestamp).toISOString()],
+            ['Key', msg.key || '(null)'],
+            ['Schema ID', msg.schemaId != null ? String(msg.schemaId) : '(none)'],
+            ['Schema Type', msg.schemaType || '(none)'],
+            ['Schema Name', msg.schemaName || '(none)']
+        ];
+        metaFields.forEach(function(pair) {
+            grid.appendChild(el('span', { className: 'mk', textContent: pair[0] }));
+            grid.appendChild(el('span', { className: 'mv', textContent: String(pair[1]) }));
+        });
+        if (msg.error) {
+            grid.appendChild(el('span', { className: 'mk', textContent: 'Error' }));
+            grid.appendChild(el('span', { className: 'mv', textContent: msg.error, style: 'color:var(--error)' }));
+        }
+        metaPane.appendChild(grid);
+        body.appendChild(metaPane);
 
         // Raw tab
         var rawPane = el('div', { className: 'msg-tab-content', 'data-tab': 'raw' });
@@ -692,11 +763,13 @@
         var nextOffset = lastMsg.offset + 1;
         var partition = partitionSelect.value;
         var limit = limitSelect.value;
+        var useSchema = useSchemaToggle.checked;
 
         try {
             var data = await api(
                 '/api/topics/' + encodeURIComponent(activeTopic) +
-                '/messages?partition=' + partition + '&offset=' + nextOffset + '&limit=' + limit
+                '/messages?partition=' + partition + '&offset=' + nextOffset + '&limit=' + limit +
+                '&useSchema=' + useSchema
             );
             currentMessages = currentMessages.concat(data.messages);
             var old = messagesArea.querySelector('.load-more');
