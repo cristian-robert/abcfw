@@ -15,6 +15,7 @@ import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
 import org.apache.kafka.common.serialization.StringSerializer;
+import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 
 import jakarta.annotation.PreDestroy;
@@ -30,14 +31,20 @@ public class KafkaProducerService {
     private final KafkaProperties kafkaProperties;
     private final ObjectMapper objectMapper;
     private final SchemaRegistryClient schemaRegistryClient;
-    private final KafkaProducer<String, Object> producer;
+    private volatile KafkaProducer<String, Object> producer;
 
     public KafkaProducerService(KafkaProperties kafkaProperties, ObjectMapper objectMapper,
-                                SchemaRegistryClient schemaRegistryClient) {
+                                @Nullable SchemaRegistryClient schemaRegistryClient) {
         this.kafkaProperties = kafkaProperties;
         this.objectMapper = objectMapper;
         this.schemaRegistryClient = schemaRegistryClient;
-        this.producer = createProducer();
+    }
+
+    private synchronized KafkaProducer<String, Object> getProducer() {
+        if (producer == null) {
+            producer = createProducer();
+        }
+        return producer;
     }
 
     public RecordMetadata send(String topic, String schemaSubject, String jsonContent) throws Exception {
@@ -49,13 +56,16 @@ public class KafkaProducerService {
         }
 
         ProducerRecord<String, Object> record = new ProducerRecord<>(topic, value);
-        Future<RecordMetadata> future = producer.send(record);
+        Future<RecordMetadata> future = getProducer().send(record);
         RecordMetadata metadata = future.get(30, TimeUnit.SECONDS);
         log.info("Produced message to topic={} partition={} offset={}", metadata.topic(), metadata.partition(), metadata.offset());
         return metadata;
     }
 
     public List<String> listSubjects() throws Exception {
+        if (schemaRegistryClient == null) {
+            return Collections.emptyList();
+        }
         Collection<String> subjects = schemaRegistryClient.getAllSubjects();
         return subjects.stream().sorted().toList();
     }

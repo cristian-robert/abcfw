@@ -3,3 +3,24 @@ spring:
     console:
       enabled: true
       path: /h2-console
+
+kafka:
+  bootstrap-servers: localhost:9092
+  schema-registry-url: http://localhost:8081
+  security-protocol: PLAINTEXT
+  schema-registry:
+    enabled: false
+  ssl:
+    key-store-location:
+    key-store-password:
+    key-store-type: pkcs12
+    trust-store-location:
+    trust-store-password:
+    key-password:
+  schema-registry-ssl:
+    truststore-location:
+    truststore-password:
+    truststore-type: JKS
+    keystore-location:
+    keystore-password:
+    keystore-type: PKCS12

@@ -26,6 +26,8 @@ import org.apache.kafka.common.header.Header;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import org.springframework.stereotype.Service;
 
+import org.springframework.lang.Nullable;
+
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -42,7 +44,7 @@ public class KafkaReaderService {
     private final SchemaRegistryClient schemaRegistryClient;
 
     public KafkaReaderService(KafkaProperties kafkaProperties, ObjectMapper objectMapper,
-                              SchemaRegistryClient schemaRegistryClient) {
+                              @Nullable SchemaRegistryClient schemaRegistryClient) {
         this.kafkaProperties = kafkaProperties;
         this.objectMapper = objectMapper;
         this.schemaRegistryClient = schemaRegistryClient;

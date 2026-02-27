@@ -4,6 +4,7 @@ import io.confluent.kafka.schemaregistry.client.CachedSchemaRegistryClient;
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -18,6 +19,7 @@ public class SchemaRegistryConfig {
     private final KafkaProperties kafkaProperties;
 
     @Bean
+    @ConditionalOnProperty(name = "kafka.schema-registry.enabled", havingValue = "true", matchIfMissing = true)
     public SchemaRegistryClient schemaRegistryClient() {
         Map<String, Object> srConfig = KafkaSslConfigurer.buildSchemaRegistrySslConfig(kafkaProperties);
         srConfig.put("schema.registry.url", kafkaProperties.getSchemaRegistryUrl());
