@@ -8,6 +8,7 @@ import {
   createTemplate,
   updateTemplate,
   deleteTemplate,
+  duplicateTemplate,
 } from "@/lib/api";
 
 export function useTemplates(collectionId?: number | null) {
@@ -74,5 +75,16 @@ export function useTemplates(collectionId?: number | null) {
     }
   }, [refresh]);
 
-  return { templates, loading, error, refresh, get, create, update, remove };
+  const duplicate = useCallback(async (id: number): Promise<TemplateDetail | null> => {
+    try {
+      const result = await duplicateTemplate(id);
+      await refresh();
+      return result;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to duplicate template");
+      return null;
+    }
+  }, [refresh]);
+
+  return { templates, loading, error, refresh, get, create, update, remove, duplicate };
 }

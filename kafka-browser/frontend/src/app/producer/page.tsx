@@ -223,6 +223,14 @@ export default function ProducerPage() {
               setJsonContent("");
             }
           }}
+          onDuplicate={async (id) => {
+            const result = await templates.duplicate(id);
+            if (result) {
+              setSelectedTemplateId(result.id);
+              setName(result.name);
+              setJsonContent(result.jsonContent || "{}");
+            }
+          }}
           onRunAll={handleRunAll}
           onTopicChange={handleTopicChange}
           onSchemaChange={handleSchemaChange}

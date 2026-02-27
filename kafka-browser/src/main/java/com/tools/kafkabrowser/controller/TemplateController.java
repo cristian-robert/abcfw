@@ -70,6 +70,18 @@ public class TemplateController {
         return TemplateDetailDto.from(saved);
     }
 
+    @PostMapping("/{id}/duplicate")
+    public ResponseEntity<TemplateDetailDto> duplicateTemplate(@PathVariable Long id) {
+        Template source = templateRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Template not found"));
+        Template copy = new Template();
+        copy.setName(source.getName() + " (copy)");
+        copy.setJsonContent(source.getJsonContent());
+        copy.setCollection(source.getCollection());
+        Template saved = templateRepository.save(copy);
+        return ResponseEntity.status(HttpStatus.CREATED).body(TemplateDetailDto.from(saved));
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteTemplate(@PathVariable Long id) {
         if (!templateRepository.existsById(id)) {

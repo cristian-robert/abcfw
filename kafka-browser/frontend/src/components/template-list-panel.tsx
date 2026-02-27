@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, Play, Trash2, FileJson } from "lucide-react";
+import { Plus, Play, Trash2, Copy, FileJson } from "lucide-react";
 
 interface TemplateListPanelProps {
   templates: TemplateSummary[];
@@ -18,6 +18,7 @@ interface TemplateListPanelProps {
   onSelect: (id: number) => void;
   onUpload: (name: string, content: string) => void;
   onDelete: (id: number) => void;
+  onDuplicate: (id: number) => void;
   onRunAll: () => void;
   onTopicChange: (topic: string) => void;
   onSchemaChange: (schema: string) => void;
@@ -32,6 +33,7 @@ export function TemplateListPanel({
   onSelect,
   onUpload,
   onDelete,
+  onDuplicate,
   onRunAll,
   onTopicChange,
   onSchemaChange,
@@ -112,15 +114,28 @@ export function TemplateListPanel({
                 >
                   <FileJson className="h-3.5 w-3.5 shrink-0" />
                   <span className="truncate flex-1">{t.name}</span>
-                  <button
-                    className="hidden group-hover:block p-0.5 rounded hover:bg-red-500/20 text-red-400"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onDelete(t.id);
-                    }}
-                  >
-                    <Trash2 className="h-3 w-3" />
-                  </button>
+                  <div className="hidden group-hover:flex items-center gap-0.5">
+                    <button
+                      className="p-0.5 rounded hover:bg-white/[0.08] text-muted-foreground"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDuplicate(t.id);
+                      }}
+                      title="Duplicate template"
+                    >
+                      <Copy className="h-3 w-3" />
+                    </button>
+                    <button
+                      className="p-0.5 rounded hover:bg-red-500/20 text-red-400"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDelete(t.id);
+                      }}
+                      title="Delete template"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </button>
+                  </div>
                 </div>
               );
             })}

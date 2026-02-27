@@ -85,6 +85,12 @@ export async function deleteTemplate(id: number): Promise<void> {
   if (!res.ok) throw new Error(`Failed to delete template: ${res.status}`);
 }
 
+export async function duplicateTemplate(id: number): Promise<TemplateDetail> {
+  const res = await fetch(`/api/templates/${id}/duplicate`, { method: "POST" });
+  if (!res.ok) throw new Error(`Failed to duplicate template: ${res.status}`);
+  return res.json();
+}
+
 // --- Collections ---
 
 export async function fetchCollections(): Promise<CollectionSummary[]> {
