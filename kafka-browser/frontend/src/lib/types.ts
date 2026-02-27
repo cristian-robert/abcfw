@@ -30,3 +30,38 @@ export interface MessageParams {
   limit?: number;
   useSchema?: boolean;
 }
+
+export interface TemplateSummary {
+  id: number;
+  name: string;
+  topicName: string | null;
+  schemaSubject: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TemplateDetail extends TemplateSummary {
+  jsonContent: string;
+}
+
+export interface TemplateFormData {
+  name: string;
+  topicName: string;
+  schemaSubject: string;
+  jsonContent: string;
+}
+
+export interface ProduceResponse {
+  success: boolean;
+  topic: string;
+  partition: number;
+  offset: number;
+  error: string | null;
+}
+
+export interface BulkProduceResponse {
+  total: number;
+  succeeded: number;
+  failed: number;
+  results: ProduceResponse[];
+}
