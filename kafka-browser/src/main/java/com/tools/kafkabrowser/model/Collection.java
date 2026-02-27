@@ -7,11 +7,11 @@ import lombok.Setter;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "templates")
+@Table(name = "collections")
 @Getter
 @Setter
 @NoArgsConstructor
-public class Template {
+public class Collection {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -20,12 +20,10 @@ public class Template {
     private String name;
 
     @Column(columnDefinition = "CLOB")
-    private String jsonContent;
+    private String avscContent;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "collection_id")
-    private Collection collection;
-
+    private String schemaSubject;
+    private String topicName;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 

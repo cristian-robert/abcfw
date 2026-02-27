@@ -5,8 +5,7 @@ import java.time.LocalDateTime;
 public record TemplateSummaryDto(
         Long id,
         String name,
-        String topicName,
-        String schemaSubject,
+        Long collectionId,
         LocalDateTime createdAt,
         LocalDateTime updatedAt
 ) {
@@ -14,8 +13,7 @@ public record TemplateSummaryDto(
         return new TemplateSummaryDto(
                 template.getId(),
                 template.getName(),
-                template.getTopicName(),
-                template.getSchemaSubject(),
+                template.getCollection() != null ? template.getCollection().getId() : null,
                 template.getCreatedAt(),
                 template.getUpdatedAt()
         );
