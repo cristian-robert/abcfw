@@ -9,7 +9,6 @@ import com.tools.kafkabrowser.config.KafkaSslConfigurer;
 import com.tools.kafkabrowser.model.KafkaMessageDto;
 import com.tools.kafkabrowser.model.MessagePage;
 import io.confluent.kafka.schemaregistry.avro.AvroSchema;
-import io.confluent.kafka.schemaregistry.client.CachedSchemaRegistryClient;
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.avro.Schema;
@@ -42,15 +41,11 @@ public class KafkaReaderService {
     private final ObjectMapper objectMapper;
     private final SchemaRegistryClient schemaRegistryClient;
 
-    public KafkaReaderService(KafkaProperties kafkaProperties, ObjectMapper objectMapper) {
+    public KafkaReaderService(KafkaProperties kafkaProperties, ObjectMapper objectMapper,
+                              SchemaRegistryClient schemaRegistryClient) {
         this.kafkaProperties = kafkaProperties;
         this.objectMapper = objectMapper;
-
-        Map<String, Object> srConfig = KafkaSslConfigurer.buildSchemaRegistrySslConfig(kafkaProperties);
-        srConfig.put("schema.registry.url", kafkaProperties.getSchemaRegistryUrl());
-        this.schemaRegistryClient = new CachedSchemaRegistryClient(
-                List.of(kafkaProperties.getSchemaRegistryUrl()), 1000, srConfig);
-        log.info("Schema Registry client created for {}", kafkaProperties.getSchemaRegistryUrl());
+        this.schemaRegistryClient = schemaRegistryClient;
     }
 
     public MessagePage readMessages(String topic, int partition, long fromOffset, int limit, boolean useSchema) {
