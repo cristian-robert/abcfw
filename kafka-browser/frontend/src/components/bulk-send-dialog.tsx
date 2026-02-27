@@ -105,7 +105,9 @@ export function BulkSendDialog({
                 result.results[i].success ? (
                   <CheckCircle className="h-4 w-4 text-emerald-400 shrink-0" />
                 ) : (
-                  <XCircle className="h-4 w-4 text-red-400 shrink-0" title={result.results[i].error || undefined} />
+                  <span title={result.results[i].error || undefined}>
+                    <XCircle className="h-4 w-4 text-red-400 shrink-0" />
+                  </span>
                 )
               )}
             </div>
