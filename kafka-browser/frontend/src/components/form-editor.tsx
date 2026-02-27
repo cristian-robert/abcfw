@@ -32,16 +32,13 @@ export function FormEditor({
 }: FormEditorProps) {
   const [viewMode, setViewMode] = useState<"form" | "raw">("form");
   const [rawContent, setRawContent] = useState(jsonContent);
-  const [parseError, setParseError] = useState<string | null>(null);
+  const [rawParseError, setRawParseError] = useState<string | null>(null);
 
-  const parsedData = useMemo(() => {
+  const { parsedData, parseError } = useMemo(() => {
     try {
-      const data = JSON.parse(jsonContent);
-      setParseError(null);
-      return data;
+      return { parsedData: JSON.parse(jsonContent), parseError: null };
     } catch (e) {
-      setParseError(e instanceof Error ? e.message : "Invalid JSON");
-      return null;
+      return { parsedData: null, parseError: e instanceof Error ? e.message : "Invalid JSON" };
     }
   }, [jsonContent]);
 
@@ -56,9 +53,9 @@ export function FormEditor({
     try {
       JSON.parse(value);
       onJsonChange(value);
-      setParseError(null);
+      setRawParseError(null);
     } catch (e) {
-      setParseError(e instanceof Error ? e.message : "Invalid JSON");
+      setRawParseError(e instanceof Error ? e.message : "Invalid JSON");
     }
   };
 
@@ -174,8 +171,8 @@ export function FormEditor({
             />
           )}
 
-          {parseError && viewMode === "raw" && (
-            <div className="text-[10px] text-red-400 mt-1">{parseError}</div>
+          {rawParseError && viewMode === "raw" && (
+            <div className="text-[10px] text-red-400 mt-1">{rawParseError}</div>
           )}
         </div>
       </ScrollArea>

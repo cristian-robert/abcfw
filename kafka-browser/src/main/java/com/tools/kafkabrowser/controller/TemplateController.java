@@ -1,6 +1,7 @@
 package com.tools.kafkabrowser.controller;
 
 import com.tools.kafkabrowser.model.Template;
+import com.tools.kafkabrowser.model.TemplateDetailDto;
 import com.tools.kafkabrowser.model.TemplateDto;
 import com.tools.kafkabrowser.model.TemplateSummaryDto;
 import com.tools.kafkabrowser.repository.CollectionRepository;
@@ -32,13 +33,14 @@ public class TemplateController {
     }
 
     @GetMapping("/{id}")
-    public Template getTemplate(@PathVariable Long id) {
-        return templateRepository.findById(id)
+    public TemplateDetailDto getTemplate(@PathVariable Long id) {
+        Template template = templateRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Template not found"));
+        return TemplateDetailDto.from(template);
     }
 
     @PostMapping
-    public ResponseEntity<Template> createTemplate(@RequestBody TemplateDto dto) {
+    public ResponseEntity<TemplateDetailDto> createTemplate(@RequestBody TemplateDto dto) {
         Template template = new Template();
         template.setName(dto.name());
         template.setJsonContent(dto.jsonContent());
@@ -48,11 +50,11 @@ public class TemplateController {
             template.setCollection(collection);
         }
         Template saved = templateRepository.save(template);
-        return ResponseEntity.status(HttpStatus.CREATED).body(saved);
+        return ResponseEntity.status(HttpStatus.CREATED).body(TemplateDetailDto.from(saved));
     }
 
     @PutMapping("/{id}")
-    public Template updateTemplate(@PathVariable Long id, @RequestBody TemplateDto dto) {
+    public TemplateDetailDto updateTemplate(@PathVariable Long id, @RequestBody TemplateDto dto) {
         Template template = templateRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Template not found"));
         template.setName(dto.name());
@@ -64,7 +66,8 @@ public class TemplateController {
         } else {
             template.setCollection(null);
         }
-        return templateRepository.save(template);
+        Template saved = templateRepository.save(template);
+        return TemplateDetailDto.from(saved);
     }
 
     @DeleteMapping("/{id}")

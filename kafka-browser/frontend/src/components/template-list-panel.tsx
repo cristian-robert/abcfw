@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { TemplateSummary, CollectionDetail } from "@/lib/types";
 import { Button } from "@/components/ui/button";
@@ -37,6 +37,13 @@ export function TemplateListPanel({
   onSchemaChange,
 }: TemplateListPanelProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [localTopic, setLocalTopic] = useState(collection?.topicName || "");
+  const [localSchema, setLocalSchema] = useState(collection?.schemaSubject || "");
+
+  useEffect(() => {
+    setLocalTopic(collection?.topicName || "");
+    setLocalSchema(collection?.schemaSubject || "");
+  }, [collection?.topicName, collection?.schemaSubject]);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -127,8 +134,18 @@ export function TemplateListPanel({
               Topic
             </label>
             <Input
-              value={collection.topicName || ""}
-              onChange={(e) => onTopicChange(e.target.value)}
+              value={localTopic}
+              onChange={(e) => setLocalTopic(e.target.value)}
+              onBlur={() => {
+                if (localTopic !== (collection.topicName || "")) {
+                  onTopicChange(localTopic);
+                }
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  (e.target as HTMLInputElement).blur();
+                }
+              }}
               placeholder="topic-name"
               className="h-7 text-xs mt-0.5"
             />
@@ -138,8 +155,18 @@ export function TemplateListPanel({
               Schema Subject
             </label>
             <Input
-              value={collection.schemaSubject || ""}
-              onChange={(e) => onSchemaChange(e.target.value)}
+              value={localSchema}
+              onChange={(e) => setLocalSchema(e.target.value)}
+              onBlur={() => {
+                if (localSchema !== (collection.schemaSubject || "")) {
+                  onSchemaChange(localSchema);
+                }
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  (e.target as HTMLInputElement).blur();
+                }
+              }}
               placeholder="schema-subject"
               list="schema-subjects"
               className="h-7 text-xs mt-0.5"
