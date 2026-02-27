@@ -5,6 +5,9 @@ import {
   TemplateSummary,
   TemplateDetail,
   TemplateFormData,
+  CollectionSummary,
+  CollectionDetail,
+  CollectionFormData,
   ProduceResponse,
   BulkProduceResponse,
 } from "./types";
@@ -42,8 +45,11 @@ export async function fetchMessages(
 
 // --- Templates ---
 
-export async function fetchTemplates(): Promise<TemplateSummary[]> {
-  const res = await fetch("/api/templates");
+export async function fetchTemplates(collectionId?: number): Promise<TemplateSummary[]> {
+  const url = collectionId
+    ? `/api/templates?collectionId=${collectionId}`
+    : "/api/templates";
+  const res = await fetch(url);
   if (!res.ok) throw new Error(`Failed to fetch templates: ${res.status}`);
   return res.json();
 }
@@ -77,6 +83,51 @@ export async function updateTemplate(id: number, data: TemplateFormData): Promis
 export async function deleteTemplate(id: number): Promise<void> {
   const res = await fetch(`/api/templates/${id}`, { method: "DELETE" });
   if (!res.ok) throw new Error(`Failed to delete template: ${res.status}`);
+}
+
+// --- Collections ---
+
+export async function fetchCollections(): Promise<CollectionSummary[]> {
+  const res = await fetch("/api/collections");
+  if (!res.ok) throw new Error(`Failed to fetch collections: ${res.status}`);
+  return res.json();
+}
+
+export async function fetchCollection(id: number): Promise<CollectionDetail> {
+  const res = await fetch(`/api/collections/${id}`);
+  if (!res.ok) throw new Error(`Failed to fetch collection: ${res.status}`);
+  return res.json();
+}
+
+export async function createCollection(data: CollectionFormData): Promise<CollectionDetail> {
+  const res = await fetch("/api/collections", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error(`Failed to create collection: ${res.status}`);
+  return res.json();
+}
+
+export async function updateCollection(id: number, data: CollectionFormData): Promise<CollectionDetail> {
+  const res = await fetch(`/api/collections/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error(`Failed to update collection: ${res.status}`);
+  return res.json();
+}
+
+export async function deleteCollection(id: number): Promise<void> {
+  const res = await fetch(`/api/collections/${id}`, { method: "DELETE" });
+  if (!res.ok) throw new Error(`Failed to delete collection: ${res.status}`);
+}
+
+export async function runCollection(id: number): Promise<BulkProduceResponse> {
+  const res = await fetch(`/api/collections/${id}/run`, { method: "POST" });
+  if (!res.ok) throw new Error(`Failed to run collection: ${res.status}`);
+  return res.json();
 }
 
 // --- Producer ---

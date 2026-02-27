@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { TemplateSummary, TemplateDetail, TemplateFormData } from "@/lib/types";
 import {
   fetchTemplates,
@@ -10,7 +10,7 @@ import {
   deleteTemplate,
 } from "@/lib/api";
 
-export function useTemplates() {
+export function useTemplates(collectionId?: number | null) {
   const [templates, setTemplates] = useState<TemplateSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -19,14 +19,14 @@ export function useTemplates() {
     try {
       setLoading(true);
       setError(null);
-      const data = await fetchTemplates();
+      const data = await fetchTemplates(collectionId ?? undefined);
       setTemplates(data);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to fetch templates");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [collectionId]);
 
   useEffect(() => {
     refresh();
@@ -35,8 +35,8 @@ export function useTemplates() {
   const get = useCallback(async (id: number): Promise<TemplateDetail | null> => {
     try {
       return await fetchTemplate(id);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to fetch template");
       return null;
     }
   }, []);
@@ -46,8 +46,8 @@ export function useTemplates() {
       const result = await createTemplate(data);
       await refresh();
       return result;
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to create template");
       return null;
     }
   }, [refresh]);
@@ -57,8 +57,8 @@ export function useTemplates() {
       const result = await updateTemplate(id, data);
       await refresh();
       return result;
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to update template");
       return null;
     }
   }, [refresh]);
@@ -68,8 +68,8 @@ export function useTemplates() {
       await deleteTemplate(id);
       await refresh();
       return true;
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to delete template");
       return false;
     }
   }, [refresh]);

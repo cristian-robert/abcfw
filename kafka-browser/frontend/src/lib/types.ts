@@ -34,8 +34,7 @@ export interface MessageParams {
 export interface TemplateSummary {
   id: number;
   name: string;
-  topicName: string | null;
-  schemaSubject: string | null;
+  collectionId: number | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -46,9 +45,36 @@ export interface TemplateDetail extends TemplateSummary {
 
 export interface TemplateFormData {
   name: string;
-  topicName: string;
-  schemaSubject: string;
+  collectionId: number | null;
   jsonContent: string;
+}
+
+export interface CollectionSummary {
+  id: number;
+  name: string;
+  topicName: string | null;
+  schemaSubject: string | null;
+  hasAvsc: boolean;
+  templateCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CollectionDetail {
+  id: number;
+  name: string;
+  topicName: string | null;
+  schemaSubject: string | null;
+  avscContent: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CollectionFormData {
+  name: string;
+  topicName: string | null;
+  schemaSubject: string | null;
+  avscContent: string | null;
 }
 
 export interface ProduceResponse {
