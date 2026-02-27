@@ -69,15 +69,20 @@ public class KafkaReaderService {
 
             consumer.assign(partitions);
 
+            // Over-fetch factor: when reading all partitions, collect extra messages
+            // so we get good coverage across partitions before trimming to the requested limit
+            int collectLimit = partition >= 0 ? limit : Math.min(limit * partitions.size(), limit * 3);
+
             if (fromOffset >= 0) {
                 for (TopicPartition tp : partitions) {
                     consumer.seek(tp, fromOffset);
                 }
             } else {
+                // Seek each partition to (end - collectLimit) to capture recent messages
                 consumer.seekToEnd(partitions);
                 for (TopicPartition tp : partitions) {
                     long endOffset = consumer.position(tp);
-                    long startOffset = Math.max(0, endOffset - limit);
+                    long startOffset = Math.max(0, endOffset - collectLimit);
                     consumer.seek(tp, startOffset);
                 }
             }
@@ -86,7 +91,7 @@ public class KafkaReaderService {
             int emptyPolls = 0;
             Duration pollTimeout = Duration.ofMillis(kafkaProperties.getConsumer().getPollTimeoutMs());
 
-            while (messages.size() < limit && emptyPolls < 2) {
+            while (messages.size() < collectLimit && emptyPolls < 2) {
                 ConsumerRecords<byte[], byte[]> records = consumer.poll(pollTimeout);
                 if (records.isEmpty()) {
                     emptyPolls++;
@@ -94,17 +99,27 @@ public class KafkaReaderService {
                 }
                 emptyPolls = 0;
                 for (ConsumerRecord<byte[], byte[]> record : records) {
-                    if (messages.size() >= limit) break;
+                    if (messages.size() >= collectLimit) break;
                     messages.add(toDto(record, useSchema));
                 }
             }
 
-            boolean hasMore = false;
-            for (TopicPartition tp : partitions) {
-                Map<TopicPartition, Long> endOffsets = consumer.endOffsets(List.of(tp));
-                if (consumer.position(tp) < endOffsets.getOrDefault(tp, 0L)) {
-                    hasMore = true;
-                    break;
+            // Sort by timestamp descending (newest first) for consistent global ordering
+            messages.sort(Comparator.comparingLong(KafkaMessageDto::timestamp).reversed());
+
+            // Trim to the requested limit after sorting
+            boolean hasMore;
+            if (messages.size() > limit) {
+                messages = new ArrayList<>(messages.subList(0, limit));
+                hasMore = true;
+            } else {
+                hasMore = false;
+                for (TopicPartition tp : partitions) {
+                    Map<TopicPartition, Long> endOffsets = consumer.endOffsets(List.of(tp));
+                    if (consumer.position(tp) < endOffsets.getOrDefault(tp, 0L)) {
+                        hasMore = true;
+                        break;
+                    }
                 }
             }
 

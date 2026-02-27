@@ -30,3 +30,10 @@ export interface MessageParams {
   limit?: number;
   useSchema?: boolean;
 }
+
+export type SortOrder =
+  | "timestamp_desc"
+  | "timestamp_asc"
+  | "offset_desc"
+  | "offset_asc";
+

@@ -116,6 +116,7 @@
   --sidebar-ring: oklch(0.556 0 0);
 }
 
+/* === Base Layer === */
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -125,23 +126,53 @@
   }
 }
 
-/* Custom scrollbar */
+/* Smooth transitions for interactive elements (color properties only — never height/overflow) */
+@layer base {
+  button,
+  a,
+  [role="tab"],
+  input,
+  select,
+  textarea {
+    transition: color 0.2s ease, background-color 0.2s ease,
+      border-color 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+  }
+}
+
+/* === Selection === */
+::selection {
+  background: rgba(45, 212, 191, 0.2);
+  color: inherit;
+}
+
+/* === Focus — teal accent for keyboard navigation === */
+:focus-visible {
+  outline: 2px solid rgba(45, 212, 191, 0.5);
+  outline-offset: 2px;
+}
+
+/* === Scrollbar — polished, rounded, responsive === */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255 255 255 / 0.1);
-  border-radius: 3px;
+  background: rgba(255 255 255 / 0.08);
+  border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255 255 255 / 0.2);
+  background: rgba(255 255 255 / 0.16);
+}
+::-webkit-scrollbar-thumb:active {
+  background: rgba(255 255 255 / 0.22);
 }
 
-/* Message entry animation */
+/* === Animations === */
+
+/* Collapsible content entry */
 @keyframes fade-in-up {
   from {
     opacity: 0;
@@ -153,6 +184,80 @@
   }
 }
 
-[data-state="open"] > div {
+[data-slot="collapsible-content"] > div {
   animation: fade-in-up 0.15s ease-out;
+}
+
+/* Staggered card entry — used on message cards in the list */
+@keyframes card-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-card-enter {
+  animation: card-enter 0.25s ease-out both;
+}
+
+/* Empty state float */
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* Health status pulse */
+@keyframes pulse-dot {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(52, 211, 153, 0);
+  }
+}
+
+.animate-pulse-dot {
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+
+/* === Utility Classes === */
+
+/* Subtle teal glow for expanded/active cards */
+.glow-teal {
+  box-shadow: 0 0 24px rgba(45, 212, 191, 0.07),
+    0 0 6px rgba(45, 212, 191, 0.04);
+}
+
+/* Gradient text */
+.text-gradient-teal {
+  background: linear-gradient(135deg, #2dd4bf, #38bdf8);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* === Accessibility: Reduced Motion === */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
