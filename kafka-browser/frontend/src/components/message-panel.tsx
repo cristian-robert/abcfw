@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useCallback, useState } from "react";
+import { useEffect, useCallback, useState, useMemo } from "react";
 import { TopicInfo, KafkaMessage } from "@/lib/types";
 import { useMessages } from "@/hooks/use-messages";
 import { MessageToolbar } from "./message-toolbar";
@@ -9,6 +9,8 @@ import { EmptyState } from "./empty-state";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
+
+export type SortOrder = "newest" | "oldest";
 
 interface MessagePanelProps {
   selectedTopic: string | null;
@@ -20,6 +22,17 @@ export function MessagePanel({ selectedTopic, topicInfo }: MessagePanelProps) {
   const [partition, setPartition] = useState(-1);
   const [limit, setLimit] = useState(25);
   const [useSchema, setUseSchema] = useState(true);
+  const [sortOrder, setSortOrder] = useState<SortOrder>("newest");
+
+  const sortedMessages = useMemo(() => {
+    const sorted = [...messages];
+    sorted.sort((a, b) =>
+      sortOrder === "newest"
+        ? b.timestamp - a.timestamp
+        : a.timestamp - b.timestamp
+    );
+    return sorted;
+  }, [messages, sortOrder]);
 
   const refresh = useCallback(() => {
     if (!selectedTopic) return;
@@ -56,7 +69,7 @@ export function MessagePanel({ selectedTopic, topicInfo }: MessagePanelProps) {
   }
 
   return (
-    <div className="flex-1 flex flex-col min-w-0">
+    <div className="flex-1 flex flex-col min-w-0 min-h-0">
       <MessageToolbar
         topic={selectedTopic}
         partitionCount={topicInfo?.partitions ?? 0}
@@ -66,21 +79,23 @@ export function MessagePanel({ selectedTopic, topicInfo }: MessagePanelProps) {
         onLimitChange={setLimit}
         useSchema={useSchema}
         onUseSchemaChange={setUseSchema}
+        sortOrder={sortOrder}
+        onSortOrderChange={setSortOrder}
         onRefresh={refresh}
         loading={loading}
         messageCount={messages.length}
       />
 
-      <ScrollArea className="flex-1">
-        <div className="p-4 space-y-2">
+      <ScrollArea className="flex-1 min-h-0">
+        <div className="p-4 flex flex-col gap-2">
           {error && (
-            <div className="text-xs text-destructive bg-destructive/10 rounded-md p-3 mb-2">
+            <div className="text-xs text-destructive bg-destructive/10 rounded-md p-3">
               {error}
             </div>
           )}
 
           {loading && messages.length === 0 && (
-            <div className="space-y-2">
+            <div className="flex flex-col gap-2">
               {Array.from({ length: 5 }).map((_, i) => (
                 <Skeleton key={i} className="h-12 w-full rounded-lg" />
               ))}
@@ -96,7 +111,7 @@ export function MessagePanel({ selectedTopic, topicInfo }: MessagePanelProps) {
             </div>
           )}
 
-          {messages.map((msg: KafkaMessage, i: number) => (
+          {sortedMessages.map((msg: KafkaMessage, i: number) => (
             <MessageCard
               key={`${msg.partition}-${msg.offset}`}
               message={msg}
