@@ -89,6 +89,8 @@ public class KafkaProducerService {
         }
 
         Schema effectiveSchema = schema;
+        // Union handling: selects first non-null branch. Works for common ["null", "type"] unions.
+        // For complex multi-type unions (e.g., ["null", "int", "string"]), this may select the wrong branch.
         if (schema.getType() == Schema.Type.UNION) {
             for (Schema branch : schema.getTypes()) {
                 if (branch.getType() == Schema.Type.NULL) continue;
@@ -140,10 +142,10 @@ public class KafkaProducerService {
 
         Map<String, Object> sslProps = new HashMap<>();
         KafkaSslConfigurer.addKafkaSslProperties(sslProps, kafkaProperties);
-        sslProps.forEach((k, v) -> props.put(k, v.toString()));
+        sslProps.forEach((k, v) -> { if (v != null) props.put(k, v.toString()); });
 
         Map<String, Object> srSslConfig = KafkaSslConfigurer.buildSchemaRegistrySslConfig(kafkaProperties);
-        srSslConfig.forEach((k, v) -> props.put(k, v.toString()));
+        srSslConfig.forEach((k, v) -> { if (v != null) props.put(k, v.toString()); });
 
         log.info("Kafka producer created for {}", kafkaProperties.getBootstrapServers());
         return new KafkaProducer<>(props);

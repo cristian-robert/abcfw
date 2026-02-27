@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { ChevronRight, X, Plus } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -38,7 +38,6 @@ interface EditableTreeNodeProps {
   defaultExpanded: number;
   onChange: (value: unknown) => void;
   onDelete: (() => void) | undefined;
-  onRenameKey?: (oldKey: string, newKey: string) => void;
   isLast?: boolean;
 }
 
@@ -209,6 +208,11 @@ function LeafEditor({
 }) {
   const stringValue = value === null ? "null" : String(value);
   const [editValue, setEditValue] = useState(stringValue);
+
+  useEffect(() => {
+    const newStringValue = value === null ? "null" : String(value);
+    setEditValue(newStringValue);
+  }, [value]);
 
   const handleBlur = () => {
     if (editValue === "null") {
