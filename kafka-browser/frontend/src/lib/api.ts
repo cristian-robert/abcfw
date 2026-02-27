@@ -166,6 +166,23 @@ export async function produceBulk(
   return res.json();
 }
 
+// --- Settings ---
+
+export async function fetchSettings(): Promise<Record<string, string>> {
+  const res = await fetch("/api/settings");
+  if (!res.ok) throw new Error(`Failed to fetch settings: ${res.status}`);
+  return res.json();
+}
+
+export async function updateSetting(key: string, value: string): Promise<void> {
+  const res = await fetch(`/api/settings/${encodeURIComponent(key)}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ value }),
+  });
+  if (!res.ok) throw new Error(`Failed to update setting: ${res.status}`);
+}
+
 // --- Schemas ---
 
 export async function fetchSchemaSubjects(): Promise<string[]> {

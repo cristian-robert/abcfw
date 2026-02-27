@@ -15,6 +15,8 @@ interface TemplateListPanelProps {
   selectedId: number | null;
   collection: CollectionDetail | null;
   subjects: string[];
+  effectiveTopic: string;
+  effectiveSchema: string;
   onSelect: (id: number) => void;
   onUpload: (name: string, content: string) => void;
   onDelete: (id: number) => void;
@@ -30,6 +32,8 @@ export function TemplateListPanel({
   selectedId,
   collection,
   subjects,
+  effectiveTopic,
+  effectiveSchema,
   onSelect,
   onUpload,
   onDelete,
@@ -146,7 +150,9 @@ export function TemplateListPanel({
         <div className="border-t border-white/[0.06] p-3 space-y-2 shrink-0">
           <div>
             <label className="text-[10px] uppercase tracking-wider text-muted-foreground/60">
-              Topic
+              Topic {!collection.topicName && effectiveTopic && (
+                <span className="normal-case tracking-normal text-muted-foreground/40">(global)</span>
+              )}
             </label>
             <Input
               value={localTopic}
@@ -161,13 +167,15 @@ export function TemplateListPanel({
                   (e.target as HTMLInputElement).blur();
                 }
               }}
-              placeholder="topic-name"
+              placeholder={effectiveTopic || "topic-name"}
               className="h-7 text-xs mt-0.5"
             />
           </div>
           <div>
             <label className="text-[10px] uppercase tracking-wider text-muted-foreground/60">
-              Schema Subject
+              Schema {!collection.schemaSubject && effectiveSchema && (
+                <span className="normal-case tracking-normal text-muted-foreground/40">(global)</span>
+              )}
             </label>
             <Input
               value={localSchema}
@@ -182,7 +190,7 @@ export function TemplateListPanel({
                   (e.target as HTMLInputElement).blur();
                 }
               }}
-              placeholder="schema-subject"
+              placeholder={effectiveSchema || "schema-subject"}
               list="schema-subjects"
               className="h-7 text-xs mt-0.5"
             />
@@ -196,7 +204,7 @@ export function TemplateListPanel({
             size="sm"
             className="w-full h-7 text-xs"
             onClick={onRunAll}
-            disabled={!collection.topicName || templates.length === 0}
+            disabled={!effectiveTopic || templates.length === 0}
           >
             <Play className="h-3 w-3 mr-1.5" />
             Run All ({templates.length})

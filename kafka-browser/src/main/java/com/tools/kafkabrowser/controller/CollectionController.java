@@ -1,6 +1,7 @@
 package com.tools.kafkabrowser.controller;
 
 import com.tools.kafkabrowser.model.*;
+import com.tools.kafkabrowser.repository.AppSettingRepository;
 import com.tools.kafkabrowser.repository.CollectionRepository;
 import com.tools.kafkabrowser.repository.TemplateRepository;
 import com.tools.kafkabrowser.service.KafkaProducerService;
@@ -22,6 +23,7 @@ public class CollectionController {
     private final CollectionRepository collectionRepository;
     private final TemplateRepository templateRepository;
     private final KafkaProducerService kafkaProducerService;
+    private final AppSettingRepository appSettingRepository;
 
     @GetMapping
     public List<CollectionSummaryDto> listCollections() {
@@ -73,8 +75,12 @@ public class CollectionController {
     public ResponseEntity<BulkProduceResponse> runCollection(@PathVariable Long id) {
         Collection collection = collectionRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Collection not found"));
-        if (collection.getTopicName() == null || collection.getTopicName().isBlank()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Collection has no topic configured");
+
+        String topic = resolveOrGlobal(collection.getTopicName(), "global.topic");
+        String schema = resolveOrGlobal(collection.getSchemaSubject(), "global.schemaSubject");
+
+        if (topic == null || topic.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No topic configured (collection or global)");
         }
         List<Template> templates = templateRepository.findByCollectionIdOrderByUpdatedAtDesc(id);
         if (templates.isEmpty()) {
@@ -85,19 +91,23 @@ public class CollectionController {
         int failed = 0;
         for (Template template : templates) {
             try {
-                var metadata = kafkaProducerService.send(
-                        collection.getTopicName(),
-                        collection.getSchemaSubject(),
-                        template.getJsonContent()
-                );
+                var metadata = kafkaProducerService.send(topic, schema, template.getJsonContent());
                 results.add(new ProduceResponse(true, metadata.topic(), metadata.partition(), metadata.offset(), null));
                 succeeded++;
             } catch (Exception e) {
                 log.error("Failed to produce template '{}': {}", template.getName(), e.getMessage());
-                results.add(new ProduceResponse(false, collection.getTopicName(), -1, -1, e.getMessage()));
+                results.add(new ProduceResponse(false, topic, -1, -1, e.getMessage()));
                 failed++;
             }
         }
         return ResponseEntity.ok(new BulkProduceResponse(templates.size(), succeeded, failed, results));
+    }
+
+    private String resolveOrGlobal(String value, String globalKey) {
+        if (value != null && !value.isBlank()) return value;
+        return appSettingRepository.findById(globalKey)
+                .map(AppSetting::getValue)
+                .filter(v -> !v.isBlank())
+                .orElse(null);
     }
 }

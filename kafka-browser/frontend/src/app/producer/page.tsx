@@ -1,14 +1,16 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import { useCollections } from "@/hooks/use-collections";
 import { useTemplates } from "@/hooks/use-templates";
 import { useProducer } from "@/hooks/use-producer";
 import { useSchemas } from "@/hooks/use-schemas";
+import { useSettings } from "@/hooks/use-settings";
 import { CollectionSidebar } from "@/components/collection-sidebar";
 import { TemplateListPanel } from "@/components/template-list-panel";
 import { FormEditor } from "@/components/form-editor";
 import { ConfirmSendDialog } from "@/components/confirm-send-dialog";
+import { GlobalDefaultsBar } from "@/components/global-defaults-bar";
 import { CollectionDetail } from "@/lib/types";
 import { fetchCollection, updateCollection } from "@/lib/api";
 
@@ -27,6 +29,16 @@ export default function ProducerPage() {
 
   const producer = useProducer();
   const schemas = useSchemas();
+  const appSettings = useSettings();
+
+  const effectiveTopic = useMemo(
+    () => collectionDetail?.topicName || appSettings.settings["global.topic"] || "",
+    [collectionDetail?.topicName, appSettings.settings]
+  );
+  const effectiveSchema = useMemo(
+    () => collectionDetail?.schemaSubject || appSettings.settings["global.schemaSubject"] || "",
+    [collectionDetail?.schemaSubject, appSettings.settings]
+  );
 
   const [confirmDialog, setConfirmDialog] = useState<{
     open: boolean;
@@ -119,26 +131,26 @@ export default function ProducerPage() {
   }, [name, jsonContent, selectedTemplateId, selectedCollectionId, templates]);
 
   const handleSendSingle = useCallback(() => {
-    if (!collectionDetail?.topicName) return;
+    if (!effectiveTopic) return;
     setConfirmDialog({
       open: true,
-      topic: collectionDetail.topicName,
-      schema: collectionDetail.schemaSubject,
+      topic: effectiveTopic,
+      schema: effectiveSchema || null,
       count: 1,
       mode: "single",
     });
-  }, [collectionDetail]);
+  }, [effectiveTopic, effectiveSchema]);
 
   const handleRunAll = useCallback(() => {
-    if (!collectionDetail?.topicName) return;
+    if (!effectiveTopic) return;
     setConfirmDialog({
       open: true,
-      topic: collectionDetail.topicName,
-      schema: collectionDetail.schemaSubject,
+      topic: effectiveTopic,
+      schema: effectiveSchema || null,
       count: templates.templates.length,
       mode: "collection",
     });
-  }, [collectionDetail, templates.templates.length]);
+  }, [effectiveTopic, effectiveSchema, templates.templates.length]);
 
   const handleConfirmSend = useCallback(async () => {
     if (confirmDialog.mode === "single") {
@@ -190,7 +202,15 @@ export default function ProducerPage() {
   const hasContent = selectedTemplateId !== null || jsonContent.length > 2;
 
   return (
-    <div className="flex h-full overflow-hidden">
+    <div className="flex flex-col h-full overflow-hidden">
+      <GlobalDefaultsBar
+        globalTopic={appSettings.settings["global.topic"] || ""}
+        globalSchema={appSettings.settings["global.schemaSubject"] || ""}
+        subjects={schemas.subjects}
+        onTopicChange={(v) => appSettings.set("global.topic", v)}
+        onSchemaChange={(v) => appSettings.set("global.schemaSubject", v)}
+      />
+      <div className="flex flex-1 min-h-0 overflow-hidden">
       <CollectionSidebar
         collections={collections.collections}
         loading={collections.loading}
@@ -213,6 +233,8 @@ export default function ProducerPage() {
           selectedId={selectedTemplateId}
           collection={collectionDetail}
           subjects={schemas.subjects}
+          effectiveTopic={effectiveTopic}
+          effectiveSchema={effectiveSchema}
           onSelect={handleSelectTemplate}
           onUpload={handleUploadTemplate}
           onDelete={async (id) => {
@@ -246,7 +268,7 @@ export default function ProducerPage() {
           onSave={handleSave}
           onSend={handleSendSingle}
           saving={saving}
-          sendDisabled={!collectionDetail?.topicName || !jsonContent.trim()}
+          sendDisabled={!effectiveTopic || !jsonContent.trim()}
           sendResult={sendResult}
         />
       ) : (
@@ -266,6 +288,7 @@ export default function ProducerPage() {
         onCancel={() => setConfirmDialog((prev) => ({ ...prev, open: false }))}
         sending={producer.sending}
       />
+      </div>
     </div>
   );
 }
