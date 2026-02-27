@@ -74,7 +74,7 @@ export function FormEditor({
   };
 
   return (
-    <div className="flex flex-col h-full flex-1">
+    <div className="flex flex-col h-full flex-1 min-h-0">
       <div className="flex items-center gap-2 px-4 h-10 border-b border-white/[0.06] shrink-0">
         <Input
           value={name}
@@ -108,7 +108,7 @@ export function FormEditor({
         </div>
       </div>
 
-      <ScrollArea className="flex-1">
+      <ScrollArea className="flex-1 min-h-0">
         <div className="p-4">
           {viewMode === "form" && parsedData !== null && (
             <div className="space-y-0.5">

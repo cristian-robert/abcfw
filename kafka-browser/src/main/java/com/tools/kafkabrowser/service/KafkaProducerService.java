@@ -142,23 +142,33 @@ public class KafkaProducerService {
     }
 
     private KafkaProducer<String, Object> createProducer() {
-        Properties props = new Properties();
+        // Broker config — no schema registry serializer class (we configure it manually)
+        Map<String, Object> props = new HashMap<>();
         props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaProperties.getBootstrapServers());
-        props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
-        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, KafkaAvroSerializer.class.getName());
-        props.put("schema.registry.url", kafkaProperties.getSchemaRegistryUrl());
         props.put(ProducerConfig.ACKS_CONFIG, "all");
         props.put(ProducerConfig.RETRIES_CONFIG, 3);
 
-        Map<String, Object> sslProps = new HashMap<>();
-        KafkaSslConfigurer.addKafkaSslProperties(sslProps, kafkaProperties);
-        sslProps.forEach((k, v) -> { if (v != null) props.put(k, v.toString()); });
+        // Schema registry config on producer props (mirrors befwlc-v2)
+        props.put("schema.registry.url", kafkaProperties.getSchemaRegistryUrl());
+        props.put("auto.register.schemas", false);
+        props.put("use.latest.version", true);
 
-        Map<String, Object> srSslConfig = KafkaSslConfigurer.buildSchemaRegistrySslConfig(kafkaProperties);
-        srSslConfig.forEach((k, v) -> { if (v != null) props.put(k, v.toString()); });
+        KafkaSslConfigurer.addKafkaSslProperties(props, kafkaProperties);
+
+        // Create Avro serializer with clean SR-only config (separate from Kafka broker SSL)
+        Map<String, Object> srConfig = new HashMap<>(KafkaSslConfigurer.buildSchemaRegistrySslConfig(kafkaProperties));
+        srConfig.put("schema.registry.url", kafkaProperties.getSchemaRegistryUrl());
+        srConfig.put("auto.register.schemas", false);
+        srConfig.put("use.latest.version", true);
+
+        KafkaAvroSerializer avroSerializer = new KafkaAvroSerializer();
+        avroSerializer.configure(srConfig, false);
+
+        @SuppressWarnings("unchecked")
+        var valueSerializer = (org.apache.kafka.common.serialization.Serializer<Object>) (org.apache.kafka.common.serialization.Serializer<?>) avroSerializer;
 
         log.info("Kafka producer created for {}", kafkaProperties.getBootstrapServers());
-        return new KafkaProducer<>(props);
+        return new KafkaProducer<>(props, new StringSerializer(), valueSerializer);
     }
 
     @PreDestroy
