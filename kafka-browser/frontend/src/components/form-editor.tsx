@@ -127,6 +127,18 @@ export function FormEditor({
                       delete next[key];
                       handleFormChange(next);
                     }}
+                    onKeyRename={(oldKey, newKey) => {
+                      if (newKey in parsedData) return;
+                      const newObj: Record<string, unknown> = {};
+                      for (const k of Object.keys(parsedData)) {
+                        if (k === oldKey) {
+                          newObj[newKey] = parsedData[oldKey];
+                        } else {
+                          newObj[k] = parsedData[k];
+                        }
+                      }
+                      handleFormChange(newObj);
+                    }}
                   />
                 ))
               ) : (
@@ -146,7 +158,12 @@ export function FormEditor({
                     typeof parsedData === "object" &&
                     !Array.isArray(parsedData)
                   ) {
-                    const key = `newField${Object.keys(parsedData).length}`;
+                    let key = "newField";
+                    let i = 0;
+                    while (key in parsedData) {
+                      i++;
+                      key = `newField${i}`;
+                    }
                     handleFormChange({ ...parsedData, [key]: "" });
                   }
                 }}

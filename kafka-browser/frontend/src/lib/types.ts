@@ -77,6 +77,17 @@ export interface CollectionFormData {
   avscContent: string | null;
 }
 
+export interface CollectionExport {
+  name: string;
+  topicName: string | null;
+  schemaSubject: string | null;
+  avscContent: string | null;
+  templates: {
+    name: string;
+    jsonContent: string;
+  }[];
+}
+
 export interface ProduceResponse {
   success: boolean;
   topic: string;

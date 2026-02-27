@@ -3,8 +3,37 @@
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { ChevronDown, ChevronRight, Plus, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+type JsonValueType = "string" | "number" | "boolean" | "null" | "object" | "array";
+
+function detectType(value: unknown): JsonValueType {
+  if (value === null) return "null";
+  if (Array.isArray(value)) return "array";
+  if (typeof value === "object") return "object";
+  if (typeof value === "boolean") return "boolean";
+  if (typeof value === "number") return "number";
+  return "string";
+}
+
+function defaultForType(type: JsonValueType): unknown {
+  switch (type) {
+    case "string": return "";
+    case "number": return 0;
+    case "boolean": return false;
+    case "null": return null;
+    case "object": return {};
+    case "array": return [];
+  }
+}
 
 interface FormFieldRendererProps {
   label: string;
@@ -12,6 +41,7 @@ interface FormFieldRendererProps {
   depth: number;
   onChange: (value: unknown) => void;
   onDelete?: () => void;
+  onKeyRename?: (oldKey: string, newKey: string) => void;
 }
 
 export function FormFieldRenderer({
@@ -20,12 +50,90 @@ export function FormFieldRenderer({
   depth,
   onChange,
   onDelete,
+  onKeyRename,
 }: FormFieldRendererProps) {
   const [expanded, setExpanded] = useState(depth < 2);
+  const [editingKey, setEditingKey] = useState(false);
+  const [keyDraft, setKeyDraft] = useState(label);
 
+  const isArrayIndex = label.startsWith("[") && label.endsWith("]");
+
+  const commitKeyRename = () => {
+    const trimmed = keyDraft.trim();
+    if (trimmed && trimmed !== label && onKeyRename) {
+      onKeyRename(label, trimmed);
+    }
+    setEditingKey(false);
+    setKeyDraft(trimmed || label);
+  };
+
+  const renderKeyLabel = () => {
+    if (isArrayIndex || !onKeyRename) {
+      return (
+        <span
+          className="text-xs text-muted-foreground shrink-0 truncate"
+          style={{ width: depth > 0 ? "auto" : undefined, minWidth: "3rem", maxWidth: "10rem" }}
+          title={label}
+        >
+          {label}
+        </span>
+      );
+    }
+
+    if (editingKey) {
+      return (
+        <Input
+          autoFocus
+          value={keyDraft}
+          onChange={(e) => setKeyDraft(e.target.value)}
+          onBlur={commitKeyRename}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") commitKeyRename();
+            if (e.key === "Escape") {
+              setKeyDraft(label);
+              setEditingKey(false);
+            }
+          }}
+          className="h-5 text-xs w-28 px-1 py-0"
+          onClick={(e) => e.stopPropagation()}
+        />
+      );
+    }
+
+    return (
+      <span
+        className="text-xs text-muted-foreground shrink-0 truncate cursor-pointer hover:text-foreground border-b border-dashed border-transparent hover:border-muted-foreground/30"
+        style={{ minWidth: "3rem", maxWidth: "10rem" }}
+        title={`${label} (click to rename)`}
+        onDoubleClick={(e) => {
+          e.stopPropagation();
+          setKeyDraft(label);
+          setEditingKey(true);
+        }}
+      >
+        {label}
+      </span>
+    );
+  };
+
+  // Object
   if (value !== null && typeof value === "object" && !Array.isArray(value)) {
     const obj = value as Record<string, unknown>;
     const keys = Object.keys(obj);
+
+    const handleChildKeyRename = (oldKey: string, newKey: string) => {
+      if (oldKey === newKey || newKey in obj) return;
+      const newObj: Record<string, unknown> = {};
+      for (const k of keys) {
+        if (k === oldKey) {
+          newObj[newKey] = obj[oldKey];
+        } else {
+          newObj[k] = obj[k];
+        }
+      }
+      onChange(newObj);
+    };
+
     return (
       <div
         className={cn("border-l border-white/[0.06]", depth > 0 && "ml-3")}
@@ -39,9 +147,7 @@ export function FormFieldRenderer({
           ) : (
             <ChevronRight className="h-3 w-3 text-muted-foreground shrink-0" />
           )}
-          <span className="text-xs font-medium text-muted-foreground">
-            {label}
-          </span>
+          {renderKeyLabel()}
           <span className="text-[10px] text-muted-foreground/40">{`{${keys.length}}`}</span>
           {onDelete && (
             <button
@@ -69,6 +175,7 @@ export function FormFieldRenderer({
                   delete next[key];
                   onChange(next);
                 }}
+                onKeyRename={handleChildKeyRename}
               />
             ))}
             <Button
@@ -76,7 +183,12 @@ export function FormFieldRenderer({
               size="sm"
               className="h-6 text-[10px] text-muted-foreground mt-1"
               onClick={() => {
-                const key = `newField${keys.length}`;
+                let key = "newField";
+                let i = 0;
+                while (key in obj) {
+                  i++;
+                  key = `newField${i}`;
+                }
                 onChange({ ...obj, [key]: "" });
               }}
             >
@@ -88,6 +200,7 @@ export function FormFieldRenderer({
     );
   }
 
+  // Array
   if (Array.isArray(value)) {
     return (
       <div
@@ -102,9 +215,7 @@ export function FormFieldRenderer({
           ) : (
             <ChevronRight className="h-3 w-3 text-muted-foreground shrink-0" />
           )}
-          <span className="text-xs font-medium text-muted-foreground">
-            {label}
-          </span>
+          {renderKeyLabel()}
           <span className="text-[10px] text-muted-foreground/40">{`[${value.length}]`}</span>
           {onDelete && (
             <button
@@ -151,7 +262,9 @@ export function FormFieldRenderer({
     );
   }
 
-  // Scalar value
+  // Scalar value (string, number, boolean, null)
+  const currentType = detectType(value);
+
   return (
     <div
       className={cn(
@@ -159,23 +272,40 @@ export function FormFieldRenderer({
         depth > 0 && "ml-3"
       )}
     >
-      <label
-        className="text-xs text-muted-foreground w-28 shrink-0 truncate"
-        title={label}
+      {renderKeyLabel()}
+
+      <Select
+        value={currentType}
+        onValueChange={(newType) => {
+          onChange(defaultForType(newType as JsonValueType));
+        }}
       >
-        {label}
-      </label>
-      {typeof value === "boolean" ? (
+        <SelectTrigger className="h-5 w-[62px] text-[10px] px-1.5 bg-white/[0.04] border-white/[0.06] shrink-0">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="string">str</SelectItem>
+          <SelectItem value="number">num</SelectItem>
+          <SelectItem value="boolean">bool</SelectItem>
+          <SelectItem value="null">null</SelectItem>
+          <SelectItem value="object">obj</SelectItem>
+          <SelectItem value="array">arr</SelectItem>
+        </SelectContent>
+      </Select>
+
+      {currentType === "null" ? (
+        <span className="text-xs text-zinc-500 italic flex-1">null</span>
+      ) : currentType === "boolean" ? (
         <input
           type="checkbox"
-          checked={value}
+          checked={value as boolean}
           onChange={(e) => onChange(e.target.checked)}
           className="h-3.5 w-3.5 accent-teal-500"
         />
-      ) : typeof value === "number" ? (
+      ) : currentType === "number" ? (
         <Input
           type="number"
-          value={value}
+          value={value as number}
           onChange={(e) => {
             const v = e.target.value;
             onChange(v === "" ? 0 : Number(v));
@@ -184,12 +314,13 @@ export function FormFieldRenderer({
         />
       ) : (
         <Input
-          value={value === null ? "" : String(value)}
+          value={String(value ?? "")}
           onChange={(e) => onChange(e.target.value)}
           placeholder="(empty)"
           className="h-7 text-xs flex-1"
         />
       )}
+
       {onDelete && (
         <button
           className="hidden group-hover:block p-0.5 rounded hover:bg-red-500/20 text-red-400 shrink-0"

@@ -1,13 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { cn } from "@/lib/utils";
-import { CollectionSummary } from "@/lib/types";
+import { CollectionSummary, CollectionExport } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, FolderOpen, Folder, Trash2, Upload } from "lucide-react";
+import { Plus, FolderOpen, Folder, Trash2, Upload, Download, FolderInput } from "lucide-react";
 
 interface CollectionSidebarProps {
   collections: CollectionSummary[];
@@ -17,6 +17,8 @@ interface CollectionSidebarProps {
   onCreate: (name: string) => void;
   onDelete: (id: number) => void;
   onUploadAvsc: (id: number, content: string) => void;
+  onExport: (id: number) => void;
+  onImport: (data: CollectionExport) => void;
 }
 
 export function CollectionSidebar({
@@ -27,9 +29,12 @@ export function CollectionSidebar({
   onCreate,
   onDelete,
   onUploadAvsc,
+  onExport,
+  onImport,
 }: CollectionSidebarProps) {
   const [creating, setCreating] = useState(false);
   const [newName, setNewName] = useState("");
+  const importInputRef = useRef<HTMLInputElement>(null);
 
   const handleCreate = () => {
     if (newName.trim()) {
@@ -53,26 +58,61 @@ export function CollectionSidebar({
     input.click();
   };
 
+  const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const data = JSON.parse(text) as CollectionExport;
+      if (!data.name || !Array.isArray(data.templates)) {
+        throw new Error("Invalid collection file");
+      }
+      onImport(data);
+    } catch {
+      alert("Invalid collection file. Expected a .collection.json export.");
+    }
+    if (importInputRef.current) importInputRef.current.value = "";
+  };
+
   return (
     <div className="flex flex-col h-full border-r border-white/[0.06] w-[180px] shrink-0">
       <div className="flex items-center justify-between px-3 h-10 border-b border-white/[0.06] shrink-0">
         <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
           Collections
         </span>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-6 w-6"
-          onClick={() => setCreating(true)}
-        >
-          <Plus className="h-3.5 w-3.5" />
-        </Button>
+        <div className="flex items-center gap-0.5">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6"
+            onClick={() => importInputRef.current?.click()}
+            title="Import collection"
+          >
+            <FolderInput className="h-3.5 w-3.5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6"
+            onClick={() => setCreating(true)}
+            title="New collection"
+          >
+            <Plus className="h-3.5 w-3.5" />
+          </Button>
+        </div>
+        <input
+          ref={importInputRef}
+          type="file"
+          accept=".json"
+          className="hidden"
+          onChange={handleImportFile}
+        />
       </div>
 
       <ScrollArea className="flex-1 min-h-0">
         <div className="p-1.5">
           {loading && (
-            <div className="space-y-1">
+            <div className="flex flex-col gap-1">
               {Array.from({ length: 4 }).map((_, i) => (
                 <Skeleton key={i} className="h-8 w-full rounded-md" />
               ))}
@@ -99,12 +139,22 @@ export function CollectionSidebar({
                     <Folder className="h-3.5 w-3.5 shrink-0" />
                   )}
                   <span className="truncate flex-1">{col.name}</span>
-                  <span className="text-[10px] text-muted-foreground/60">
+                  <span className="text-[10px] text-muted-foreground/60 group-hover:hidden">
                     {col.templateCount}
                   </span>
                   <div className="hidden group-hover:flex items-center gap-0.5">
                     <button
-                      className="p-0.5 rounded hover:bg-white/[0.08]"
+                      className="p-0.5 rounded hover:bg-white/[0.08] text-muted-foreground"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onExport(col.id);
+                      }}
+                      title="Export collection"
+                    >
+                      <Download className="h-3 w-3" />
+                    </button>
+                    <button
+                      className="p-0.5 rounded hover:bg-white/[0.08] text-muted-foreground"
                       onClick={(e) => {
                         e.stopPropagation();
                         handleAvscUpload(col.id);
@@ -127,6 +177,12 @@ export function CollectionSidebar({
                 </div>
               );
             })}
+
+          {!loading && collections.length === 0 && (
+            <div className="text-xs text-muted-foreground/50 text-center py-6 px-2">
+              No collections yet
+            </div>
+          )}
 
           {creating && (
             <div className="p-1">

@@ -224,6 +224,11 @@ export default function ProducerPage() {
           }
         }}
         onUploadAvsc={handleUploadAvsc}
+        onExport={(id) => collections.doExport(id)}
+        onImport={async (data) => {
+          const result = await collections.doImport(data);
+          if (result) setSelectedCollectionId(result.id);
+        }}
       />
 
       {selectedCollectionId && (

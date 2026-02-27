@@ -103,6 +103,41 @@ public class CollectionController {
         return ResponseEntity.ok(new BulkProduceResponse(templates.size(), succeeded, failed, results));
     }
 
+    @GetMapping("/{id}/export")
+    public CollectionExportDto exportCollection(@PathVariable Long id) {
+        Collection collection = collectionRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Collection not found"));
+        List<Template> templates = templateRepository.findByCollectionIdOrderByUpdatedAtDesc(id);
+        return CollectionExportDto.from(collection, templates);
+    }
+
+    @PostMapping("/import")
+    public ResponseEntity<Collection> importCollection(@RequestBody CollectionExportDto dto) {
+        String name = dto.name();
+        if (name == null || name.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Collection name is required");
+        }
+
+        Collection collection = new Collection();
+        collection.setName(name);
+        collection.setTopicName(dto.topicName());
+        collection.setSchemaSubject(dto.schemaSubject());
+        collection.setAvscContent(dto.avscContent());
+        Collection saved = collectionRepository.save(collection);
+
+        if (dto.templates() != null) {
+            for (CollectionExportDto.TemplateExportDto tpl : dto.templates()) {
+                Template template = new Template();
+                template.setName(tpl.name());
+                template.setJsonContent(tpl.jsonContent());
+                template.setCollection(saved);
+                templateRepository.save(template);
+            }
+        }
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(saved);
+    }
+
     private String resolveOrGlobal(String value, String globalKey) {
         if (value != null && !value.isBlank()) return value;
         return appSettingRepository.findById(globalKey)

@@ -8,6 +8,7 @@ import {
   CollectionSummary,
   CollectionDetail,
   CollectionFormData,
+  CollectionExport,
   ProduceResponse,
   BulkProduceResponse,
 } from "./types";
@@ -133,6 +134,22 @@ export async function deleteCollection(id: number): Promise<void> {
 export async function runCollection(id: number): Promise<BulkProduceResponse> {
   const res = await fetch(`/api/collections/${id}/run`, { method: "POST" });
   if (!res.ok) throw new Error(`Failed to run collection: ${res.status}`);
+  return res.json();
+}
+
+export async function exportCollection(id: number): Promise<CollectionExport> {
+  const res = await fetch(`/api/collections/${id}/export`);
+  if (!res.ok) throw new Error(`Failed to export collection: ${res.status}`);
+  return res.json();
+}
+
+export async function importCollection(data: CollectionExport): Promise<CollectionDetail> {
+  const res = await fetch("/api/collections/import", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error(`Failed to import collection: ${res.status}`);
   return res.json();
 }
 

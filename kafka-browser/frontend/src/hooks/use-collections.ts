@@ -5,6 +5,7 @@ import {
   CollectionSummary,
   CollectionDetail,
   CollectionFormData,
+  CollectionExport,
   BulkProduceResponse,
 } from "@/lib/types";
 import {
@@ -14,6 +15,8 @@ import {
   updateCollection,
   deleteCollection,
   runCollection,
+  exportCollection,
+  importCollection,
 } from "@/lib/api";
 
 export function useCollections() {
@@ -89,5 +92,31 @@ export function useCollections() {
     }
   }, []);
 
-  return { collections, loading, error, refresh, get, create, update, remove, run };
+  const doExport = useCallback(async (id: number): Promise<void> => {
+    try {
+      const data = await exportCollection(id);
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${data.name}.collection.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to export collection");
+    }
+  }, []);
+
+  const doImport = useCallback(async (data: CollectionExport): Promise<CollectionDetail | null> => {
+    try {
+      const result = await importCollection(data);
+      await refresh();
+      return result;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to import collection");
+      return null;
+    }
+  }, [refresh]);
+
+  return { collections, loading, error, refresh, get, create, update, remove, run, doExport, doImport };
 }
