@@ -1,6 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
+import { SortOrder } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -15,7 +16,15 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { RefreshCw, FileJson, Hash } from "lucide-react";
+import {
+  RefreshCw,
+  FileJson,
+  Hash,
+  ArrowDownWideNarrow,
+  ArrowUpNarrowWide,
+  Clock,
+  ArrowDown01,
+} from "lucide-react";
 
 interface MessageToolbarProps {
   topic: string;
@@ -26,10 +35,20 @@ interface MessageToolbarProps {
   onLimitChange: (limit: number) => void;
   useSchema: boolean;
   onUseSchemaChange: (useSchema: boolean) => void;
+  sortOrder: SortOrder;
+  onSortOrderChange: (sort: SortOrder) => void;
   onRefresh: () => void;
   loading: boolean;
   messageCount: number;
+  hasMore: boolean;
 }
+
+const SORT_OPTIONS: { value: SortOrder; label: string; icon: "time" | "offset" }[] = [
+  { value: "timestamp_desc", label: "Newest first", icon: "time" },
+  { value: "timestamp_asc", label: "Oldest first", icon: "time" },
+  { value: "offset_desc", label: "Offset ↓", icon: "offset" },
+  { value: "offset_asc", label: "Offset ↑", icon: "offset" },
+];
 
 export function MessageToolbar({
   topic,
@@ -40,9 +59,12 @@ export function MessageToolbar({
   onLimitChange,
   useSchema,
   onUseSchemaChange,
+  sortOrder,
+  onSortOrderChange,
   onRefresh,
   loading,
   messageCount,
+  hasMore,
 }: MessageToolbarProps) {
   return (
     <div
@@ -68,6 +90,7 @@ export function MessageToolbar({
         {messageCount > 0 && (
           <span className="text-[10px] text-muted-foreground/40 shrink-0 font-mono">
             {messageCount}
+            {hasMore ? "+" : ""} msg{messageCount !== 1 ? "s" : ""}
           </span>
         )}
       </div>
@@ -75,6 +98,47 @@ export function MessageToolbar({
       <div className="flex-1" />
 
       <div className="flex items-center gap-2">
+        {/* Sort control */}
+        <div className="flex items-center rounded-md ring-1 ring-white/[0.08] bg-white/[0.03] overflow-hidden">
+          <Select
+            value={sortOrder}
+            onValueChange={(v) => onSortOrderChange(v as SortOrder)}
+          >
+            <SelectTrigger
+              className="h-7 w-[130px] text-xs border-0 bg-transparent shadow-none focus:ring-0 focus:ring-offset-0 rounded-none gap-1.5"
+              aria-label="Sort messages"
+            >
+              {sortOrder.includes("desc") ? (
+                <ArrowDownWideNarrow
+                  className="h-3 w-3 shrink-0 text-muted-foreground/60"
+                  aria-hidden="true"
+                />
+              ) : (
+                <ArrowUpNarrowWide
+                  className="h-3 w-3 shrink-0 text-muted-foreground/60"
+                  aria-hidden="true"
+                />
+              )}
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {SORT_OPTIONS.map((opt) => (
+                <SelectItem key={opt.value} value={opt.value}>
+                  <span className="flex items-center gap-1.5">
+                    {opt.icon === "time" ? (
+                      <Clock className="h-3 w-3" aria-hidden="true" />
+                    ) : (
+                      <ArrowDown01 className="h-3 w-3" aria-hidden="true" />
+                    )}
+                    {opt.label}
+                  </span>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Partition + Limit group */}
         <div className="flex items-center rounded-md ring-1 ring-white/[0.08] bg-white/[0.03] overflow-hidden">
           <Select
             value={String(partition)}
@@ -110,7 +174,7 @@ export function MessageToolbar({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {[10, 25, 50, 100].map((n) => (
+              {[10, 25, 50, 100, 200].map((n) => (
                 <SelectItem key={n} value={String(n)}>
                   {n}
                 </SelectItem>

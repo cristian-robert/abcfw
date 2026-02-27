@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useCallback, useState } from "react";
-import { TopicInfo, KafkaMessage } from "@/lib/types";
+import { useEffect, useCallback, useState, useMemo } from "react";
+import { TopicInfo, KafkaMessage, SortOrder } from "@/lib/types";
 import { useMessages } from "@/hooks/use-messages";
 import { MessageToolbar } from "./message-toolbar";
 import { MessageCard } from "./message-card";
@@ -21,6 +21,7 @@ export function MessagePanel({ selectedTopic, topicInfo }: MessagePanelProps) {
   const [partition, setPartition] = useState(-1);
   const [limit, setLimit] = useState(25);
   const [useSchema, setUseSchema] = useState(true);
+  const [sortOrder, setSortOrder] = useState<SortOrder>("timestamp_desc");
 
   const refresh = useCallback(() => {
     if (!selectedTopic) return;
@@ -42,12 +43,39 @@ export function MessagePanel({ selectedTopic, topicInfo }: MessagePanelProps) {
     }
   }, [partition, limit, useSchema]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Client-side sorting — backend returns newest-first by default,
+  // but user can toggle to other orders
+  const sortedMessages = useMemo(() => {
+    if (messages.length === 0) return messages;
+    const sorted = [...messages];
+    switch (sortOrder) {
+      case "timestamp_desc":
+        sorted.sort((a, b) => b.timestamp - a.timestamp);
+        break;
+      case "timestamp_asc":
+        sorted.sort((a, b) => a.timestamp - b.timestamp);
+        break;
+      case "offset_desc":
+        sorted.sort(
+          (a, b) => b.offset - a.offset || b.partition - a.partition
+        );
+        break;
+      case "offset_asc":
+        sorted.sort(
+          (a, b) => a.offset - b.offset || a.partition - b.partition
+        );
+        break;
+    }
+    return sorted;
+  }, [messages, sortOrder]);
+
+  // For load-more, use the max offset from raw messages (not sorted display order)
   const loadMore = useCallback(() => {
     if (!selectedTopic || !messages.length) return;
-    const lastOffset = messages[messages.length - 1].offset;
+    const maxOffset = Math.max(...messages.map((m) => m.offset));
     load(
       selectedTopic,
-      { partition, offset: lastOffset + 1, limit, useSchema },
+      { partition, offset: maxOffset + 1, limit, useSchema },
       true
     );
   }, [selectedTopic, messages, partition, limit, useSchema, load]);
@@ -67,9 +95,12 @@ export function MessagePanel({ selectedTopic, topicInfo }: MessagePanelProps) {
         onLimitChange={setLimit}
         useSchema={useSchema}
         onUseSchemaChange={setUseSchema}
+        sortOrder={sortOrder}
+        onSortOrderChange={setSortOrder}
         onRefresh={refresh}
         loading={loading}
         messageCount={messages.length}
+        hasMore={hasMore}
       />
 
       <ScrollArea className="flex-1">
@@ -129,7 +160,7 @@ export function MessagePanel({ selectedTopic, topicInfo }: MessagePanelProps) {
             </div>
           )}
 
-          {messages.map((msg: KafkaMessage, i: number) => (
+          {sortedMessages.map((msg: KafkaMessage, i: number) => (
             <MessageCard
               key={`${msg.partition}-${msg.offset}`}
               message={msg}
