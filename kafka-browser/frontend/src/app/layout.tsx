@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { JetBrains_Mono } from "next/font/google";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { NavBar } from "@/components/nav-bar";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -20,8 +21,8 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Kafka Browser",
-  description: "Browse and inspect Kafka topic messages with Avro deserialization",
+  title: "Kafka Tools",
+  description: "Browse Kafka topics and produce messages with Avro serialization",
 };
 
 export default function RootLayout({
@@ -34,7 +35,14 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${jetbrainsMono.variable} antialiased`}
       >
-        <TooltipProvider>{children}</TooltipProvider>
+        <TooltipProvider>
+          <div className="flex flex-col h-screen">
+            <NavBar />
+            <div className="flex-1 overflow-hidden">
+              {children}
+            </div>
+          </div>
+        </TooltipProvider>
       </body>
     </html>
   );

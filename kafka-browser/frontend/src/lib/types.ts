@@ -30,3 +30,75 @@ export interface MessageParams {
   limit?: number;
   useSchema?: boolean;
 }
+
+export interface TemplateSummary {
+  id: number;
+  name: string;
+  collectionId: number | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TemplateDetail extends TemplateSummary {
+  jsonContent: string;
+}
+
+export interface TemplateFormData {
+  name: string;
+  collectionId: number | null;
+  jsonContent: string;
+}
+
+export interface CollectionSummary {
+  id: number;
+  name: string;
+  topicName: string | null;
+  schemaSubject: string | null;
+  hasAvsc: boolean;
+  templateCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CollectionDetail {
+  id: number;
+  name: string;
+  topicName: string | null;
+  schemaSubject: string | null;
+  avscContent: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CollectionFormData {
+  name: string;
+  topicName: string | null;
+  schemaSubject: string | null;
+  avscContent: string | null;
+}
+
+export interface CollectionExport {
+  name: string;
+  topicName: string | null;
+  schemaSubject: string | null;
+  avscContent: string | null;
+  templates: {
+    name: string;
+    jsonContent: string;
+  }[];
+}
+
+export interface ProduceResponse {
+  success: boolean;
+  topic: string;
+  partition: number;
+  offset: number;
+  error: string | null;
+}
+
+export interface BulkProduceResponse {
+  total: number;
+  succeeded: number;
+  failed: number;
+  results: ProduceResponse[];
+}

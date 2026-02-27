@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -9,7 +10,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Toggle } from "@/components/ui/toggle";
-import { RefreshCw, FileJson } from "lucide-react";
+import { RefreshCw, FileJson, ArrowUpDown } from "lucide-react";
+import type { SortOrder } from "./message-panel";
 
 interface MessageToolbarProps {
   topic: string;
@@ -20,6 +22,8 @@ interface MessageToolbarProps {
   onLimitChange: (limit: number) => void;
   useSchema: boolean;
   onUseSchemaChange: (useSchema: boolean) => void;
+  sortOrder: SortOrder;
+  onSortOrderChange: (order: SortOrder) => void;
   onRefresh: () => void;
   loading: boolean;
   messageCount: number;
@@ -34,38 +38,40 @@ export function MessageToolbar({
   onLimitChange,
   useSchema,
   onUseSchemaChange,
+  sortOrder,
+  onSortOrderChange,
   onRefresh,
   loading,
   messageCount,
 }: MessageToolbarProps) {
   return (
-    <div className="flex items-center gap-3 px-4 py-2.5 border-b border-border bg-[#0d0d0e]">
-      <div className="flex items-center gap-1.5 min-w-0">
-        <span className="text-xs font-mono text-teal-300 truncate max-w-[200px]">
+    <div className="flex items-center gap-2 px-3 py-2 border-b border-white/[0.06] bg-[#0d0d0e] shrink-0 flex-wrap">
+      <div className="flex items-center gap-2 min-w-0">
+        <span className="text-xs font-mono text-teal-300 truncate max-w-[240px]">
           {topic}
         </span>
         {messageCount > 0 && (
-          <span className="text-[10px] text-muted-foreground/60 shrink-0">
-            ({messageCount} msg{messageCount !== 1 ? "s" : ""})
-          </span>
+          <Badge variant="secondary" className="text-[10px] h-4 px-1.5 font-mono shrink-0">
+            {messageCount}
+          </Badge>
         )}
       </div>
 
-      <div className="flex-1" />
+      <div className="flex-1 min-w-2" />
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1.5 flex-wrap">
         <Select
           value={String(partition)}
           onValueChange={(v) => onPartitionChange(Number(v))}
         >
-          <SelectTrigger className="h-7 w-[100px] text-xs bg-white/[0.04] border-white/[0.08]">
+          <SelectTrigger className="h-7 w-[110px] text-xs bg-white/[0.04] border-white/[0.06]">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="-1">All parts.</SelectItem>
+            <SelectItem value="-1">All partitions</SelectItem>
             {Array.from({ length: partitionCount }).map((_, i) => (
               <SelectItem key={i} value={String(i)}>
-                Part. {i}
+                Partition {i}
               </SelectItem>
             ))}
           </SelectContent>
@@ -75,7 +81,7 @@ export function MessageToolbar({
           value={String(limit)}
           onValueChange={(v) => onLimitChange(Number(v))}
         >
-          <SelectTrigger className="h-7 w-[70px] text-xs bg-white/[0.04] border-white/[0.08]">
+          <SelectTrigger className="h-7 w-[72px] text-xs bg-white/[0.04] border-white/[0.06]">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -87,11 +93,25 @@ export function MessageToolbar({
           </SelectContent>
         </Select>
 
+        <Select
+          value={sortOrder}
+          onValueChange={(v) => onSortOrderChange(v as SortOrder)}
+        >
+          <SelectTrigger className="h-7 w-[110px] text-xs bg-white/[0.04] border-white/[0.06]">
+            <ArrowUpDown className="h-3 w-3 mr-1 shrink-0" />
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="newest">Newest first</SelectItem>
+            <SelectItem value="oldest">Oldest first</SelectItem>
+          </SelectContent>
+        </Select>
+
         <Toggle
           pressed={useSchema}
           onPressedChange={onUseSchemaChange}
           size="sm"
-          className="h-7 gap-1.5 text-xs data-[state=on]:bg-teal-500/15 data-[state=on]:text-teal-300"
+          className="h-7 gap-1 text-xs data-[state=on]:bg-teal-500/15 data-[state=on]:text-teal-300"
           aria-label="Toggle schema deserialization"
         >
           <FileJson className="h-3.5 w-3.5" />

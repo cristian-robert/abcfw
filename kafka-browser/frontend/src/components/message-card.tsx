@@ -111,7 +111,7 @@ export function MessageCard({ message, index }: MessageCardProps) {
                 </TabsTrigger>
               </TabsList>
 
-              <div className="max-h-[500px] overflow-auto">
+              <div>
                 <TabsContent value="message" className="m-0 p-4">
                   {message.error ? (
                     <div className="text-xs text-destructive bg-destructive/10 rounded-md p-3">
