@@ -7,7 +7,7 @@ import { Database, FileJson } from "lucide-react";
 
 const navItems = [
   { href: "/browser", label: "Browser", icon: Database },
-  { href: "/templates", label: "Templates", icon: FileJson },
+  { href: "/producer", label: "Producer", icon: FileJson },
 ];
 
 export function NavBar() {
